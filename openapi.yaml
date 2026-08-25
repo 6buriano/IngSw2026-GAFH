@@ -3,9 +3,9 @@ info:
   title: API Tienda - Productos y Ordenes
   description: >
     API REST para la gestión de Productos y Ordenes de compra de un local
-    que vende de forma presencial y por Web. Estilo arquitectónico de
-    Microservicios: este documento cubre el recurso Productos (endpoint
-    PATCH) y el recurso Ordenes (GET, GET por id, GET detalle, POST).
+    que vende de forma presencial y por Web. Documenta el catálogo de
+    Productos (listar, obtener, crear, reemplazar, actualizar parcialmente)
+    y las Ordenes de compra (listar, obtener, ver detalle, crear).
   version: 1.0.0
 
 servers:
@@ -21,9 +21,115 @@ tags:
 paths:
 
   # ---------------------------------------------------------------------
+  # i. GET /api/productos   iii. POST /api/productos
+  # ---------------------------------------------------------------------
+  /api/productos:
+    get:
+      tags:
+        - Productos
+      summary: Obtener todos los productos
+      description: Retorna una lista con todos los productos.
+      operationId: getProductos
+      responses:
+        '200':
+          description: Lista de productos obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producto'
+
+    post:
+      tags:
+        - Productos
+      summary: Crear un producto
+      description: Crea un nuevo producto en el catálogo.
+      operationId: crearProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+      responses:
+        '201':
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoCreadoResponse'
+              example:
+                id: 1
+        '400':
+          description: Datos inválidos o error al crear el producto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ---------------------------------------------------------------------
+  # ii. GET /api/productos/{id}  iv. PUT /api/productos/{id}
   # v. PATCH /api/productos/{id}
   # ---------------------------------------------------------------------
   /api/productos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProductoId'
+
+    get:
+      tags:
+        - Productos
+      summary: Obtener un producto por su identificador
+      description: Retorna los datos del producto solicitado.
+      operationId: getProductoById
+      responses:
+        '200':
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Productos
+      summary: Modificar un producto
+      description: Reemplaza todos los datos de un producto existente.
+      operationId: reemplazarProducto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoRequest'
+      responses:
+        '200':
+          description: Producto modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+              example:
+                mensaje: "Producto modificado correctamente"
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     patch:
       tags:
         - Productos
@@ -32,8 +138,6 @@ paths:
         Actualiza uno o varios campos de un producto existente sin
         necesidad de enviar el recurso completo (a diferencia de PUT).
       operationId: patchProducto
-      parameters:
-        - $ref: '#/components/parameters/ProductoId'
       requestBody:
         required: true
         content:
@@ -142,13 +246,14 @@ paths:
   # vii. GET /api/ordenes/{id}
   # ---------------------------------------------------------------------
   /api/ordenes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrdenId'
+
     get:
       tags:
         - Ordenes
       summary: Obtener una orden por id
       operationId: getOrdenById
-      parameters:
-        - $ref: '#/components/parameters/OrdenId'
       responses:
         '200':
           description: Orden encontrada
@@ -169,6 +274,9 @@ paths:
   # viii. GET /api/ordenes/{id}/detalle
   # ---------------------------------------------------------------------
   /api/ordenes/{id}/detalle:
+    parameters:
+      - $ref: '#/components/parameters/OrdenId'
+
     get:
       tags:
         - Ordenes
@@ -178,8 +286,6 @@ paths:
         el detalle completo del producto (nombre, descripción, precio,
         stock, imágenes), no solo su identificador.
       operationId: getOrdenDetalle
-      parameters:
-        - $ref: '#/components/parameters/OrdenId'
       responses:
         '200':
           description: Detalle de la orden encontrado
@@ -224,12 +330,57 @@ components:
     # --- Productos -------------------------------------------------
     Producto:
       type: object
-      description: Producto del catálogo (definido en detalle en las rutas i-iv)
+      description: Producto completo tal como lo devuelve la API
+      required:
+        - id
+        - nombre
+        - descripcion
+        - precioUnitario
+        - stock
+        - imagenes
       properties:
         id:
           type: integer
           format: int64
+          description: Identificador único del producto
           example: 1
+        nombre:
+          type: string
+          description: Nombre del producto
+          example: "Notebook Lenovo ThinkPad"
+        descripcion:
+          type: string
+          description: Descripción del producto
+          example: "Notebook Intel i7 16GB RAM"
+        precioUnitario:
+          type: number
+          format: double
+          description: Precio unitario del producto
+          example: 1250.50
+        stock:
+          type: integer
+          description: Cantidad disponible en stock
+          example: 15
+        imagenes:
+          type: array
+          description: Lista de links a imágenes del producto
+          items:
+            type: string
+            format: uri
+          example:
+            - "https://ejemplo.com/img/notebook-1.jpg"
+            - "https://ejemplo.com/img/notebook-2.jpg"
+
+    ProductoRequest:
+      type: object
+      description: Datos necesarios para crear o reemplazar (PUT) un producto
+      required:
+        - nombre
+        - descripcion
+        - precioUnitario
+        - stock
+        - imagenes
+      properties:
         nombre:
           type: string
           example: "Notebook Lenovo ThinkPad"
@@ -260,19 +411,35 @@ components:
       properties:
         nombre:
           type: string
+          example: "Notebook Lenovo ThinkPad"
         descripcion:
           type: string
+          example: "Notebook Intel i7 16GB RAM"
         precioUnitario:
           type: number
           format: double
+          example: 1250.50
         stock:
           type: integer
+          example: 15
         imagenes:
           type: array
           items:
             type: string
             format: uri
+          example:
+            - "https://ejemplo.com/img/notebook-1.jpg"
       minProperties: 1
+
+    ProductoCreadoResponse:
+      type: object
+      description: Respuesta al crear un producto exitosamente
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador del producto creado
+          example: 1
 
     # --- Ordenes -----------------------------------------------------
     OrdenProductoItem:
