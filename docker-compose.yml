@@ -2,14 +2,12 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    image: nginx:alpine  # Usa una imagen preconstruida en lugar de compilar
     ports:
-      - "3000:3000" # Cambia 3000 si tu app usa otro puerto
-    environment:
-      - NODE_ENV=production
+      - "3000:80"        # Expone la página web en el puerto 3000
     deploy:
       resources:
         limits:
-          cpus: '2.0'      
-          memory: 2048M    
+          cpus: '1.0'
+          memory: 512M
     restart: unless-stopped
