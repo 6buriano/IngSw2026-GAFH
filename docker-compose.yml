@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  app:
-    image: nginx:alpine  # Usa una imagen preconstruida en lugar de compilar
+  app_java:
+    build: .
     ports:
-      - "3000:80"        # Expone la página web en el puerto 3000
+      - "8080:8080" # Expone la app de Java en el puerto 8080
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 512M
+          cpus: '1.5'      # Ajuste prudente de CPU
+          memory: 1536M    # 1.5 GB de RAM máximo 
     restart: unless-stopped
