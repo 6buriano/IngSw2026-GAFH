@@ -29,6 +29,10 @@ services:
       SPRING_DATASOURCE_USERNAME: usuario
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    volumes:
+      # Mapea los cambios locales de tu proyecto al contenedor
+      - .:/app
+      - /app/target
     depends_on:
       - db
     deploy:
