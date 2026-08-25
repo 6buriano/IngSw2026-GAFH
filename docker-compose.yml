@@ -4,10 +4,10 @@ services:
   app_java:
     build: .
     ports:
-      - "8080:8080" # Expone la app de Java en el puerto 8080
+      - "8080:8080"
     deploy:
       resources:
         limits:
-          cpus: '1.5'      # Ajuste prudente de CPU
-          memory: 1536M    # 1.5 GB de RAM máximo 
+          cpus: '1.5'
+          memory: 1536M
     restart: unless-stopped
