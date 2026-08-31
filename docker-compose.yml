@@ -12,7 +12,7 @@ services:
       MYSQL_USER: usuario
       MYSQL_PASSWORD: password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       # Ejecuta el script SQL en el primer arranque del contenedor
@@ -28,11 +28,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: usuario
       SPRING_DATASOURCE_PASSWORD: password
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-    volumes:
-      # Mapea los cambios locales de tu proyecto al contenedor
-      - .:/app
-      - /app/target
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
     depends_on:
       - db
     deploy:
