@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Servicio de Base de Datos MySQL
   db:
@@ -7,15 +5,18 @@ services:
     container_name: tienda_mysql
     restart: unless-stopped
     environment:
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: tiendadb
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_USER: usuario
-      MYSQL_PASSWORD: password
     ports:
-      - "3306:3306"
+      - "3306:3306"    
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     volumes:
       - mysql_data:/var/lib/mysql
-      # Ejecuta el script SQL en el primer arranque del contenedor
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
   # Aplicación Java Spring Boot
@@ -25,16 +26,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?allowPublicKeyRetrieval=true&useSSL=false
-      SPRING_DATASOURCE_USERNAME: usuario
-      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?useUNICODE=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-    volumes:
-      # Mapea los cambios locales de tu proyecto al contenedor
-      - .:/app
-      - /app/target
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     deploy:
       resources:
         limits:

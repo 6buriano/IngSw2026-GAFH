@@ -1,48 +1,58 @@
 -- =============================================
--- Script MER → MySQL
+-- Script MER → MySQL (Alineado con Java JPA)
 -- =============================================
 
--- Tabla Producto
-CREATE TABLE Producto (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    nombre          VARCHAR(255) NOT NULL,
-    descripcion     TEXT,
-    precioUnitario  INT NOT NULL CHECK (precioUnitario >= 0),
-    stock           INT NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    imagenes        JSON                    -- Array de URLs/nombres de imagen (MySQL 5.7+)
+DROP TABLE IF EXISTS Orden_Producto;
+DROP TABLE IF EXISTS imagenes_producto;
+DROP TABLE IF EXISTS Orden;
+DROP TABLE IF EXISTS productos;
+DROP TABLE IF EXISTS Producto;
+
+-- 1. TABLA PRODUCTOS (Alineada con Producto.java)
+CREATE TABLE IF NOT EXISTS productos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10,2) NOT NULL CHECK (precio >= 0),
+    stock INT NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    categoria VARCHAR(50)
 );
 
--- Tabla Orden
-CREATE TABLE Orden (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    email           VARCHAR(255) NOT NULL,
-    direccionEnvio  VARCHAR(500) NOT NULL,
-    telefono        VARCHAR(50),
-    estado          VARCHAR(50) NOT NULL DEFAULT 'pendiente',
-    fechaCreacion   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- 2. TABLA IMAGENES_PRODUCTO
+CREATE TABLE IF NOT EXISTS imagenes_producto (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    producto_id BIGINT NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 );
 
--- Tabla intermedia Orden_Producto (relación N:M)
-CREATE TABLE Orden_Producto (
-    id_producto     INT NOT NULL,
-    id_pedido       INT NOT NULL,           -- Según el diagrama (corresponde a Orden.id)
-    cantidad        INT NOT NULL CHECK (cantidad > 0),
+-- 3. TABLA ORDEN
+CREATE TABLE IF NOT EXISTS Orden (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    direccion_envio VARCHAR(500) NOT NULL,
+    telefono VARCHAR(50),
+    estado VARCHAR(50) NOT NULL DEFAULT 'Created',
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10,2) NOT NULL DEFAULT 0.00
+);
 
-    -- Clave primaria compuesta
-    PRIMARY KEY (id_producto, id_pedido),
-
-    -- Foreign Keys
-    CONSTRAINT fk_orden_producto_producto
-        FOREIGN KEY (id_producto) REFERENCES Producto(id)
-        ON DELETE RESTRICT ON UPDATE CASCADE,
-
-    CONSTRAINT fk_orden_producto_orden
-        FOREIGN KEY (id_pedido) REFERENCES Orden(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+-- 4. TABLA INTERMEDIA ORDEN_PRODUCTO
+CREATE TABLE IF NOT EXISTS Orden_Producto (
+    id_producto BIGINT NOT NULL,
+    id_orden BIGINT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    PRIMARY KEY (id_producto, id_orden),
+    CONSTRAINT fk_orden_producto_producto FOREIGN KEY (id_producto) REFERENCES productos(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_orden_producto_orden FOREIGN KEY (id_orden) REFERENCES Orden(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Índices recomendados
 CREATE INDEX idx_orden_producto_producto ON Orden_Producto(id_producto);
-CREATE INDEX idx_orden_producto_pedido   ON Orden_Producto(id_pedido);
+CREATE INDEX idx_orden_producto_orden    ON Orden_Producto(id_orden);
 CREATE INDEX idx_orden_email             ON Orden(email);
 CREATE INDEX idx_orden_estado            ON Orden(estado);
+
+-- Datos iniciales de prueba permanentes
+INSERT INTO productos (nombre, descripcion, precio, stock, categoria) 
+VALUES ('Producto de prueba', 'aDescripción del producto', 100.00, 10, 'General');
