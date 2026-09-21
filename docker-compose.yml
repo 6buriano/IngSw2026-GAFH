@@ -1,4 +1,16 @@
+version: '3.8'
+
 services:
+  # Servicio Broker MQTT
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: tienda_mqtt
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+    restart: unless-stopped
+
   # Servicio de Base de Datos MySQL
   db:
     image: mysql:8.0
@@ -10,11 +22,11 @@ services:
     ports:
       - "3306:3306"    
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 15s
     volumes:
       - mysql_data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
@@ -26,13 +38,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?useUNICODE=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      MQTT_BROKER_URL: tcp://mosquitto:1883
     depends_on:
       db:
         condition: service_healthy
+      mosquitto:
+        condition: service_started
     deploy:
       resources:
         limits:
