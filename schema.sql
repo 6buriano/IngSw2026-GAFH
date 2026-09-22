@@ -47,6 +47,27 @@ CREATE TABLE IF NOT EXISTS Orden_Producto (
     CONSTRAINT fk_orden_producto_orden FOREIGN KEY (id_orden) REFERENCES Orden(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Actualizar la tabla de facturas
+CREATE TABLE IF NOT EXISTS factura (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    orden_id BIGINT NOT NULL UNIQUE,
+    fecha_emision DATETIME NOT NULL,
+    monto_total DECIMAL(10, 2) NOT NULL,
+    CONSTRAINT fk_factura_orden FOREIGN KEY (orden_id) REFERENCES Orden(id) ON DELETE CASCADE
+);
+
+-- Tabla para los ítems detallados de cada factura
+CREATE TABLE IF NOT EXISTS factura_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    factura_id BIGINT NOT NULL,
+    producto_id BIGINT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10, 2) NOT NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    CONSTRAINT fk_item_factura FOREIGN KEY (factura_id) REFERENCES factura(id) ON DELETE CASCADE,
+    CONSTRAINT fk_item_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
+);
+
 -- Índices recomendados
 CREATE INDEX idx_orden_producto_producto ON Orden_Producto(id_producto);
 CREATE INDEX idx_orden_producto_orden    ON Orden_Producto(id_orden);
@@ -54,5 +75,5 @@ CREATE INDEX idx_orden_email             ON Orden(email);
 CREATE INDEX idx_orden_estado            ON Orden(estado);
 
 -- Datos iniciales de prueba permanentes
-INSERT INTO productos (nombre, descripcion, precio, stock, categoria) 
-VALUES ('Producto de prueba', 'aDescripción del producto', 100.00, 10, 'General');
+--INSERT INTO productos (nombre, descripcion, precio, stock, categoria) 
+--VALUES ('Producto de prueba', 'aDescripción del producto', 100.00, 10, 'General');
