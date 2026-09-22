@@ -75,5 +75,5 @@ CREATE INDEX idx_orden_email             ON Orden(email);
 CREATE INDEX idx_orden_estado            ON Orden(estado);
 
 -- Datos iniciales de prueba permanentes
---INSERT INTO productos (nombre, descripcion, precio, stock, categoria) 
---VALUES ('Producto de prueba', 'aDescripción del producto', 100.00, 10, 'General');
+-- INSERT INTO productos (nombre, descripcion, precio, stock, categoria) 
+-- VALUES ('Producto de prueba', 'aDescripción del producto', 100.00, 10, 'General');
