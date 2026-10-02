@@ -63,7 +63,7 @@
 </head>
 <body>
 
-    <!-- Barra de Navegación -->
+    <!-- Barra de Navegación--> 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm mb-4">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" href="#">
@@ -77,6 +77,18 @@
 
     <!-- Contenido Principal -->
     <div class="container-fluid px-4">
+
+        <!-- Alerta si se abre como archivo local -->
+        <div id="fileProtocolAlert" class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" style="display: none;" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+                <div>
+                    <strong>Página abierta como archivo local:</strong> Has abierto este archivo directamente desde tu explorador (<code>file:///</code>). Para que el buscador y la carga de datos se comuniquen con el backend y la base de datos, accede a través de:
+                    <a href="http://localhost:8080" class="fw-bold alert-link ms-1">http://localhost:8080</a>.
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         
         <!-- Pestañas de Navegación -->
         <ul class="nav nav-pills mb-4 gap-2" id="mainTab" role="tablist">
@@ -106,9 +118,18 @@
                             <h4 class="fw-bold mb-1"><i class="bi bi-card-checklist text-primary me-2"></i>Listado de Órdenes</h4>
                             <p class="text-muted small mb-0">Ordenadas por defecto de la más reciente a la más antigua. Haz clic en una fila para ver el detalle y facturación.</p>
                         </div>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="filtroOrdenes" class="form-control form-control-sm" placeholder="Buscar por email, estado, teléfono..." style="width: 260px;">
-                            <button class="btn btn-primary btn-sm px-3" onclick="cargarOrdenes()">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="input-group input-group-sm" style="width: 340px;">
+                                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="filtroOrdenes" class="form-control" placeholder="Buscar ID (#), email, estado, total..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarOrdenes" title="Limpiar búsqueda" style="display: none;">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                <button class="btn btn-primary" type="button" id="btnBuscarOrdenes" title="Buscar órdenes">
+                                    Buscar
+                                </button>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm px-3" onclick="cargarOrdenes()" title="Recargar órdenes del servidor">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
                             </button>
                         </div>
@@ -151,9 +172,18 @@
                             <h4 class="fw-bold mb-1"><i class="bi bi-tags text-success me-2"></i>Productos Disponibles</h4>
                             <p class="text-muted small mb-0">Catálogo de productos registrados en la tienda. Haz clic sobre uno para ver sus imágenes asociadas.</p>
                         </div>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="filtroProductos" class="form-control form-control-sm" placeholder="Buscar producto..." style="width: 260px;">
-                            <button class="btn btn-success btn-sm px-3" onclick="cargarProductos()">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="input-group input-group-sm" style="width: 340px;">
+                                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="filtroProductos" class="form-control" placeholder="Buscar ID (#), nombre, categoría, precio..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarProductos" title="Limpiar búsqueda" style="display: none;">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                <button class="btn btn-success" type="button" id="btnBuscarProductos" title="Buscar productos">
+                                    Buscar
+                                </button>
+                            </div>
+                            <button class="btn btn-outline-success btn-sm px-3" onclick="cargarProductos()" title="Recargar productos del servidor">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
                             </button>
                         </div>
@@ -338,11 +368,34 @@
 
     <!-- Lógica JavaScript de la Aplicación -->
     <script>
+        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8080' : '';
         let ordenesData = [];
         let productosData = [];
 
         const modalOrden = new bootstrap.Modal(document.getElementById('modalOrdenDetalle'));
         const modalImagenes = new bootstrap.Modal(document.getElementById('modalProductoImagenes'));
+
+        // ==========================================
+        // UTILIDADES Y NORMALIZACIÓN DE BÚSQUEDA
+        // ==========================================
+        function normalizar(texto) {
+            if (texto == null) return '';
+            return String(texto)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         // ==========================================
         // CARGA DE ÓRDENES (Punto 2.a)
@@ -359,30 +412,34 @@
             `;
 
             try {
-                const response = await fetch('/api/ordenes');
+                const response = await fetch(`${API_BASE}/api/ordenes`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 ordenesData = await response.json();
                 
-                document.getElementById('ordenesCount').textContent = ordenesData.length;
-                renderizarOrdenes(ordenesData);
+                // Aplicar el filtro activo o mostrar todas si está vacío
+                aplicarFiltroOrdenes();
             } catch (err) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-danger">
                             <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar órdenes: ${err.message}
+                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la página en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
                         </td>
                     </tr>
                 `;
             }
         }
 
-        function renderizarOrdenes(lista) {
+        function renderizarOrdenes(lista, busquedaActiva = '') {
             const tbody = document.getElementById('ordenesTableBody');
             if (!lista || lista.length === 0) {
+                const mensaje = busquedaActiva
+                    ? `<i class="bi bi-search me-2"></i>No se encontraron órdenes que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroOrdenes()">Restablecer búsqueda</button>`
+                    : `<i class="bi bi-inbox me-2"></i>No se encontraron órdenes registradas.`;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
-                            <i class="bi bi-inbox me-2"></i>No se encontraron órdenes registradas.
+                            ${mensaje}
                         </td>
                     </tr>
                 `;
@@ -423,7 +480,7 @@
         async function abrirDetalleOrden(id) {
             try {
                 // 1. Obtener detalle de la orden con sus productos
-                const resp = await fetch(`/api/ordenes/${id}/detalle`);
+                const resp = await fetch(`${API_BASE}/api/ordenes/${id}/detalle`);
                 if (!resp.ok) throw new Error(`Error al obtener orden: HTTP ${resp.status}`);
                 const orden = await resp.json();
 
@@ -472,7 +529,7 @@
                     secFactura.style.display = 'block';
 
                     try {
-                        const respFactura = await fetch(`/api/facturas/orden/${id}`);
+                        const respFactura = await fetch(`${API_BASE}/api/facturas/orden/${id}`);
                         if (respFactura.ok) {
                             const factura = await respFactura.json();
                             document.getElementById('facturaId').textContent = `#${factura.id}`;
@@ -525,30 +582,34 @@
             `;
 
             try {
-                const response = await fetch('/api/productos');
+                const response = await fetch(`${API_BASE}/api/productos`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 productosData = await response.json();
                 
-                document.getElementById('productosCount').textContent = productosData.length;
-                renderizarProductos(productosData);
+                // Aplicar el filtro activo o mostrar todos si está vacío
+                aplicarFiltroProductos();
             } catch (err) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-danger">
                             <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar productos: ${err.message}
+                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la página en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
                         </td>
                     </tr>
                 `;
             }
         }
 
-        function renderizarProductos(lista) {
+        function renderizarProductos(lista, busquedaActiva = '') {
             const tbody = document.getElementById('productosTableBody');
             if (!lista || lista.length === 0) {
+                const mensaje = busquedaActiva
+                    ? `<i class="bi bi-search me-2"></i>No se encontraron productos que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroProductos()">Restablecer búsqueda</button>`
+                    : `<i class="bi bi-inbox me-2"></i>No hay productos registrados en la tienda.`;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
-                            <i class="bi bi-inbox me-2"></i>No hay productos registrados en la tienda.
+                            ${mensaje}
                         </td>
                     </tr>
                 `;
@@ -614,42 +675,164 @@
         }
 
         // ==========================================
-        // FILTROS DE BÚSQUEDA
+        // BÚSQUEDA Y FILTRADO AVANZADO (Puntos 2 y 3)
         // ==========================================
-        document.getElementById('filtroOrdenes').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase().trim();
-            const filtradas = ordenesData.filter(o => 
-                (o.id && o.id.toString().includes(term)) ||
-                (o.email && o.email.toLowerCase().includes(term)) ||
-                (o.telefono && o.telefono.toLowerCase().includes(term)) ||
-                (o.estado && o.estado.toLowerCase().includes(term))
-            );
-            renderizarOrdenes(filtradas);
-        });
+        function aplicarFiltroOrdenes() {
+            const input = document.getElementById('filtroOrdenes');
+            const btnLimpiar = document.getElementById('btnLimpiarOrdenes');
+            const rawVal = input ? input.value.trim() : '';
 
-        document.getElementById('filtroProductos').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase().trim();
-            const filtradas = productosData.filter(p => 
-                (p.id && p.id.toString().includes(term)) ||
-                (p.nombre && p.nombre.toLowerCase().includes(term)) ||
-                (p.categoria && p.categoria.toLowerCase().includes(term)) ||
-                (p.descripcion && p.descripcion.toLowerCase().includes(term))
-            );
-            renderizarProductos(filtradas);
-        });
+            if (btnLimpiar) {
+                btnLimpiar.style.display = rawVal ? 'inline-block' : 'none';
+            }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            if (!rawVal) {
+                document.getElementById('ordenesCount').textContent = ordenesData.length;
+                renderizarOrdenes(ordenesData);
+                return;
+            }
+
+            const normQuery = normalizar(rawVal);
+            const tokens = normQuery.split(/\s+/).filter(Boolean);
+
+            const filtradas = ordenesData.filter(o => {
+                const idStr = String(o.id != null ? o.id : '');
+                const idConHash = '#' + idStr;
+                const email = normalizar(o.email);
+                const tel = normalizar(o.telefono);
+                const est = normalizar(o.estado);
+                const totalNum = o.total != null ? Number(o.total) : 0;
+                const totalStr = totalNum.toFixed(2);
+                const totalPlain = String(totalNum);
+                const fechaObj = o.fechaCreacion ? new Date(o.fechaCreacion) : null;
+                const fechaStr = fechaObj ? normalizar(fechaObj.toLocaleString()) : '';
+                const fechaIso = normalizar(o.fechaCreacion);
+
+                // Sinónimos comunes de estado en español/inglés
+                let sinonimosEstado = '';
+                if (est.includes('ready')) sinonimosEstado += ' listo lista entregado entrega delivery preparacion';
+                if (est.includes('stock')) sinonimosEstado += ' sin stock no stock agotado sin existencia';
+                if (est.includes('create')) sinonimosEstado += ' creada creado nueva nuevo ingresada';
+
+                // Cadena con todos los campos buscables
+                const camposBuscables = `${idStr} ${idConHash} orden ${idStr} orden #${idStr} ${email} ${tel} ${est} ${sinonimosEstado} ${totalStr} ${totalPlain} $ ${totalStr} ${fechaStr} ${fechaIso}`;
+
+                return tokens.every(tok => {
+                    const tokLimpio = tok.replace(/^#/, '');
+                    if (camposBuscables.includes(tok)) return true;
+                    if (tokLimpio && (idStr === tokLimpio || idStr.startsWith(tokLimpio))) return true;
+                    return false;
+                });
+            });
+
+            document.getElementById('ordenesCount').textContent = `${filtradas.length} de ${ordenesData.length}`;
+            renderizarOrdenes(filtradas, rawVal);
         }
 
-        // Carga inicial al cargar la página
+        function limpiarFiltroOrdenes() {
+            const input = document.getElementById('filtroOrdenes');
+            if (input) {
+                input.value = '';
+                aplicarFiltroOrdenes();
+                input.focus();
+            }
+        }
+
+        function aplicarFiltroProductos() {
+            const input = document.getElementById('filtroProductos');
+            const btnLimpiar = document.getElementById('btnLimpiarProductos');
+            const rawVal = input ? input.value.trim() : '';
+
+            if (btnLimpiar) {
+                btnLimpiar.style.display = rawVal ? 'inline-block' : 'none';
+            }
+
+            if (!rawVal) {
+                document.getElementById('productosCount').textContent = productosData.length;
+                renderizarProductos(productosData);
+                return;
+            }
+
+            const normQuery = normalizar(rawVal);
+            const tokens = normQuery.split(/\s+/).filter(Boolean);
+
+            const filtradas = productosData.filter(p => {
+                const idStr = String(p.id != null ? p.id : '');
+                const idConHash = '#' + idStr;
+                const nombre = normalizar(p.nombre);
+                const desc = normalizar(p.descripcion);
+                const cat = normalizar(p.categoria);
+                const precioNum = p.precio != null ? Number(p.precio) : 0;
+                const precioStr = precioNum.toFixed(2);
+                const precioPlain = String(precioNum);
+                const stockNum = p.stock != null ? Number(p.stock) : 0;
+                const stockStr = String(stockNum);
+                const estadoStock = stockNum > 0 ? 'disponible con stock unidades en existencia' : 'agotado sin stock no stock';
+
+                const camposBuscables = `${idStr} ${idConHash} producto ${idStr} producto #${idStr} ${nombre} ${desc} ${cat} ${precioStr} ${precioPlain} $ ${precioStr} ${stockStr} ${estadoStock}`;
+
+                return tokens.every(tok => {
+                    const tokLimpio = tok.replace(/^#/, '');
+                    if (camposBuscables.includes(tok)) return true;
+                    if (tokLimpio && (idStr === tokLimpio || idStr.startsWith(tokLimpio))) return true;
+                    return false;
+                });
+            });
+
+            document.getElementById('productosCount').textContent = `${filtradas.length} de ${productosData.length}`;
+            renderizarProductos(filtradas, rawVal);
+        }
+
+        function limpiarFiltroProductos() {
+            const input = document.getElementById('filtroProductos');
+            if (input) {
+                input.value = '';
+                aplicarFiltroProductos();
+                input.focus();
+            }
+        }
+
+        // Carga inicial y vinculación de eventos
         window.addEventListener('DOMContentLoaded', () => {
+            // Verificar si se abrió vía file://
+            if (window.location.protocol === 'file:') {
+                const alertEl = document.getElementById('fileProtocolAlert');
+                if (alertEl) alertEl.style.display = 'block';
+            }
+
+            // Eventos para buscador de órdenes
+            const inputOrdenes = document.getElementById('filtroOrdenes');
+            if (inputOrdenes) {
+                inputOrdenes.addEventListener('input', aplicarFiltroOrdenes);
+                inputOrdenes.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        aplicarFiltroOrdenes();
+                    }
+                });
+            }
+            const btnBuscarOrd = document.getElementById('btnBuscarOrdenes');
+            if (btnBuscarOrd) btnBuscarOrd.addEventListener('click', aplicarFiltroOrdenes);
+            const btnLimpiarOrd = document.getElementById('btnLimpiarOrdenes');
+            if (btnLimpiarOrd) btnLimpiarOrd.addEventListener('click', limpiarFiltroOrdenes);
+
+            // Eventos para buscador de productos
+            const inputProductos = document.getElementById('filtroProductos');
+            if (inputProductos) {
+                inputProductos.addEventListener('input', aplicarFiltroProductos);
+                inputProductos.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        aplicarFiltroProductos();
+                    }
+                });
+            }
+            const btnBuscarProd = document.getElementById('btnBuscarProductos');
+            if (btnBuscarProd) btnBuscarProd.addEventListener('click', aplicarFiltroProductos);
+            const btnLimpiarProd = document.getElementById('btnLimpiarProductos');
+            if (btnLimpiarProd) btnLimpiarProd.addEventListener('click', limpiarFiltroProductos);
+
+            // Cargar datos iniciales
             cargarOrdenes();
             cargarProductos();
         });
