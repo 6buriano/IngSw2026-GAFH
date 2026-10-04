@@ -1,0 +1,12 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y maven docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupmod -g 0 root \
+    && usermod -aG root jenkins
+
+USER jenkins

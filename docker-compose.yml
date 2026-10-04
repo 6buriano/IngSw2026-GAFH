@@ -55,5 +55,22 @@ services:
           memory: 1536M
     restart: unless-stopped
 
+      # Servidor Jenkins CI/CD
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: tienda_jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./fuente:/fuente
+      - ./destino:/destino
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
 volumes:
   mysql_data:
+  jenkins_home:
