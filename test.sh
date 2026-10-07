@@ -115,7 +115,6 @@ probar_endpoint "GET /facturas/orden/$ORDEN_SIN_STOCK_ID (Factura inexistente)" 
 
 echo -e "\n${YELLOW}--- [5] Prueba de Idempotencia por MQTT (US11) ---${NC}"
 if command -v mosquitto_pub &> /dev/null || docker exec tienda_mqtt mosquitto_pub --help &> /dev/null; then
-  echo -n "Publicando evento duplicado para la Orden ID $ORDEN_ID vía MQTT... "
   PAYLOAD="{\"id\":$ORDEN_ID,\"estado\":\"Created\"}"
   
   if command -v mosquitto_pub &> /dev/null; then
