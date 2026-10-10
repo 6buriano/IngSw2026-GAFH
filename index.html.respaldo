@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -63,11 +63,11 @@
 </head>
 <body>
 
-    <!-- Barra de Navegaci├│n--> 
+    <!-- Barra de Navegación--> 
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm mb-4">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold" href="#">
-                <i class="bi bi-shop me-2"></i>Sistema de Gesti├│n de Ventas
+                <i class="bi bi-shop me-2"></i>Sistema de Gestión de Ventas
             </a>
             <span class="badge bg-light text-dark px-3 py-2 rounded-pill">
                 <i class="bi bi-cpu me-1"></i> Laboratorio - Parte 4
@@ -83,24 +83,24 @@
             <div class="d-flex align-items-center">
                 <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
                 <div>
-                    <strong>P├ígina abierta como archivo local:</strong> Has abierto este archivo directamente desde tu explorador (<code>file:///</code>). Para que el buscador y la carga de datos se comuniquen con el backend y la base de datos, accede a trav├®s de:
+                    <strong>Página abierta como archivo local:</strong> Has abierto este archivo directamente desde tu explorador (<code>file:///</code>). Para que el buscador y la carga de datos se comuniquen con el backend y la base de datos, accede a través de:
                     <a href="http://localhost:8080" class="fw-bold alert-link ms-1">http://localhost:8080</a>.
                 </div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         
-        <!-- Pesta├▒as de Navegaci├│n -->
+        <!-- Pestañas de Navegación -->
         <ul class="nav nav-pills mb-4 gap-2" id="mainTab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active px-4 py-2 fw-semibold" id="ordenes-tab" data-bs-toggle="pill" data-bs-target="#ordenes-pane" type="button" role="tab">
-                    <i class="bi bi-receipt me-2"></i>├ôrdenes de Compra (Obligatorio)
+                    <i class="bi bi-receipt me-2"></i>Órdenes de Compra (Obligatorio)
                     <span class="badge bg-secondary ms-2" id="ordenesCount">0</span>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link px-4 py-2 fw-semibold" id="productos-tab" data-bs-toggle="pill" data-bs-target="#productos-pane" type="button" role="tab">
-                    <i class="bi bi-box-seam me-2"></i>Cat├ílogo de Productos (Opcional)
+                    <i class="bi bi-box-seam me-2"></i>Catálogo de Productos (Opcional)
                     <span class="badge bg-secondary ms-2" id="productosCount">0</span>
                 </button>
             </li>
@@ -109,43 +109,43 @@
         <div class="tab-content" id="mainTabContent">
 
             <!-- ========================================== -->
-            <!-- PESTA├æA 1: ├ôRDENES DE COMPRA (Punto 2)     -->
+            <!-- PESTAÑA 1: ÓRDENES DE COMPRA (Punto 2)     -->
             <!-- ========================================== -->
             <div class="tab-pane fade show active" id="ordenes-pane" role="tabpanel">
                 <div class="card card-custom p-4 mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
-                            <h4 class="fw-bold mb-1"><i class="bi bi-card-checklist text-primary me-2"></i>Listado de ├ôrdenes</h4>
-                            <p class="text-muted small mb-0">Ordenadas por defecto de la m├ís reciente a la m├ís antigua. Haz clic en una fila para ver el detalle y facturaci├│n.</p>
+                            <h4 class="fw-bold mb-1"><i class="bi bi-card-checklist text-primary me-2"></i>Listado de Órdenes</h4>
+                            <p class="text-muted small mb-0">Ordenadas por defecto de la más reciente a la más antigua. Haz clic en una fila para ver el detalle y facturación.</p>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <div class="input-group input-group-sm" style="width: 340px;">
                                 <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
                                 <input type="text" id="filtroOrdenes" class="form-control" placeholder="Buscar ID (#), email, estado, total..." autocomplete="off">
-                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarOrdenes" title="Limpiar b├║squeda" style="display: none;">
+                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarOrdenes" title="Limpiar búsqueda" style="display: none;">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
-                                <button class="btn btn-primary" type="button" id="btnBuscarOrdenes" title="Buscar ├│rdenes">
+                                <button class="btn btn-primary" type="button" id="btnBuscarOrdenes" title="Buscar órdenes">
                                     Buscar
                                 </button>
                             </div>
-                            <button class="btn btn-outline-primary btn-sm px-3" onclick="cargarOrdenes()" title="Recargar ├│rdenes del servidor">
+                            <button class="btn btn-outline-primary btn-sm px-3" onclick="cargarOrdenes()" title="Recargar órdenes del servidor">
                                 <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
                             </button>
                         </div>
                     </div>
 
-                    <!-- Tabla de ├ôrdenes -->
+                    <!-- Tabla de Órdenes -->
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" id="tablaOrdenes">
                             <thead class="table-light">
                                 <tr>
                                     <th scope="col">ID</th>
                                     <th scope="col">Email</th>
-                                    <th scope="col">Tel├®fono</th>
+                                    <th scope="col">Teléfono</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Total ($)</th>
-                                    <th scope="col">Fecha Creaci├│n</th>
+                                    <th scope="col">Fecha Creación</th>
                                     <th scope="col" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -153,7 +153,7 @@
                                 <tr>
                                     <td colspan="7" class="text-center py-4 text-muted">
                                         <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                        Cargando ├│rdenes...
+                                        Cargando órdenes...
                                     </td>
                                 </tr>
                             </tbody>
@@ -163,20 +163,20 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- PESTA├æA 2: PRODUCTOS (Punto 3 Opcional)   -->
+            <!-- PESTAÑA 2: PRODUCTOS (Punto 3 Opcional)   -->
             <!-- ========================================== -->
             <div class="tab-pane fade" id="productos-pane" role="tabpanel">
                 <div class="card card-custom p-4 mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
                             <h4 class="fw-bold mb-1"><i class="bi bi-tags text-success me-2"></i>Productos Disponibles</h4>
-                            <p class="text-muted small mb-0">Cat├ílogo de productos registrados en la tienda. Haz clic sobre uno para ver sus im├ígenes asociadas.</p>
+                            <p class="text-muted small mb-0">Catálogo de productos registrados en la tienda. Haz clic sobre uno para ver sus imágenes asociadas.</p>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <div class="input-group input-group-sm" style="width: 340px;">
                                 <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                                <input type="text" id="filtroProductos" class="form-control" placeholder="Buscar ID (#), nombre, categor├¡a, precio..." autocomplete="off">
-                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarProductos" title="Limpiar b├║squeda" style="display: none;">
+                                <input type="text" id="filtroProductos" class="form-control" placeholder="Buscar ID (#), nombre, categoría, precio..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="btnLimpiarProductos" title="Limpiar búsqueda" style="display: none;">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                                 <button class="btn btn-success" type="button" id="btnBuscarProductos" title="Buscar productos">
@@ -196,11 +196,11 @@
                                 <tr>
                                     <th scope="col">ID</th>
                                     <th scope="col">Nombre</th>
-                                    <th scope="col">Descripci├│n</th>
-                                    <th scope="col">Categor├¡a</th>
+                                    <th scope="col">Descripción</th>
+                                    <th scope="col">Categoría</th>
                                     <th scope="col">Precio Unitario</th>
                                     <th scope="col">Stock</th>
-                                    <th scope="col" class="text-center">Im├ígenes</th>
+                                    <th scope="col" class="text-center">Imágenes</th>
                                 </tr>
                             </thead>
                             <tbody id="productosTableBody">
@@ -220,7 +220,7 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- MODAL: DETALLE DE ORDEN Y FACTURACI├ôN (Punto 2.b y 2.c)  -->
+    <!-- MODAL: DETALLE DE ORDEN Y FACTURACIÓN (Punto 2.b y 2.c)  -->
     <!-- ======================================================== -->
     <div class="modal fade" id="modalOrdenDetalle" tabindex="-1" aria-labelledby="modalOrdenLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -240,7 +240,7 @@
                             <div class="fw-semibold text-break" id="detalleEmail"></div>
                         </div>
                         <div class="col-md-3">
-                            <span class="text-muted small">Tel├®fono:</span>
+                            <span class="text-muted small">Teléfono:</span>
                             <div class="fw-semibold" id="detalleTelefono"></div>
                         </div>
                         <div class="col-md-3">
@@ -248,11 +248,11 @@
                             <div id="detalleEstado"></div>
                         </div>
                         <div class="col-md-8">
-                            <span class="text-muted small">Direcci├│n de Env├¡o:</span>
+                            <span class="text-muted small">Dirección de Envío:</span>
                             <div class="fw-semibold text-break" id="detalleDireccion"></div>
                         </div>
                         <div class="col-md-4">
-                            <span class="text-muted small">Fecha Creaci├│n:</span>
+                            <span class="text-muted small">Fecha Creación:</span>
                             <div class="fw-semibold" id="detalleFecha"></div>
                         </div>
                     </div>
@@ -265,14 +265,14 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Producto</th>
-                                    <th>Categor├¡a</th>
+                                    <th>Categoría</th>
                                     <th class="text-end">Precio Unitario</th>
                                     <th class="text-center">Cantidad</th>
                                     <th class="text-end">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody id="detalleProductosBody">
-                                <!-- Filas din├ímicas -->
+                                <!-- Filas dinámicas -->
                             </tbody>
                             <tfoot>
                                 <tr class="table-light fw-bold">
@@ -283,19 +283,19 @@
                         </table>
                     </div>
 
-                    <!-- Detalle de Facturaci├│n (Punto 2.c: Solo Ready to Delivery) -->
+                    <!-- Detalle de Facturación (Punto 2.c: Solo Ready to Delivery) -->
                     <div id="seccionFacturacion" style="display: none;">
                         <h6 class="fw-bold mb-3 text-success">
-                            <i class="bi bi-file-earmark-check me-2"></i>Detalle de la Facturaci├│n (Ready to Delivery)
+                            <i class="bi bi-file-earmark-check me-2"></i>Detalle de la Facturación (Ready to Delivery)
                         </h6>
                         <div class="factura-box">
                             <div class="row g-2 mb-3">
                                 <div class="col-sm-4">
-                                    <span class="text-muted small">N┬░ Factura:</span>
+                                    <span class="text-muted small">N° Factura:</span>
                                     <div class="fw-bold fs-6 text-dark" id="facturaId">-</div>
                                 </div>
                                 <div class="col-sm-4">
-                                    <span class="text-muted small">Fecha de Emisi├│n:</span>
+                                    <span class="text-muted small">Fecha de Emisión:</span>
                                     <div class="fw-semibold" id="facturaFecha">-</div>
                                 </div>
                                 <div class="col-sm-4">
@@ -309,7 +309,7 @@
                                 <table class="table table-sm table-striped mb-0">
                                     <thead class="table-success">
                                         <tr>
-                                            <th>├ìtem / Producto</th>
+                                            <th>Ítem / Producto</th>
                                             <th class="text-center">Cantidad</th>
                                             <th class="text-end">Precio Facturado</th>
                                             <th class="text-end">Subtotal</th>
@@ -323,11 +323,11 @@
                         </div>
                     </div>
 
-                    <!-- Mensaje si a├║n no est├í en Ready to Delivery -->
+                    <!-- Mensaje si aún no está en Ready to Delivery -->
                     <div id="seccionSinFactura" class="alert alert-secondary d-flex align-items-center mb-0 mt-3" role="alert">
                         <i class="bi bi-info-circle-fill fs-5 me-2 text-primary"></i>
                         <div>
-                            La facturaci├│n se genera y muestra autom├íticamente cuando la orden pasa al estado <strong>Ready to Delivery</strong>.
+                            La facturación se genera y muestra automáticamente cuando la orden pasa al estado <strong>Ready to Delivery</strong>.
                         </div>
                     </div>
 
@@ -340,20 +340,20 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- MODAL: IM├üGENES DEL PRODUCTO (Punto 3.b Opcional)        -->
+    <!-- MODAL: IMÁGENES DEL PRODUCTO (Punto 3.b Opcional)        -->
     <!-- ======================================================== -->
     <div class="modal fade" id="modalProductoImagenes" tabindex="-1" aria-labelledby="modalProductoLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title fw-bold" id="modalProductoLabel">
-                        <i class="bi bi-images me-2"></i>Im├ígenes de: <span id="productoModalNombre"></span>
+                        <i class="bi bi-images me-2"></i>Imágenes de: <span id="productoModalNombre"></span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="row g-3" id="galeriaImagenesBody">
-                        <!-- Tarjetas de im├ígenes -->
+                        <!-- Tarjetas de imágenes -->
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -366,7 +366,7 @@
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- L├│gica JavaScript de la Aplicaci├│n -->
+    <!-- Lógica JavaScript de la Aplicación -->
     <script>
         const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8080' : '';
         let ordenesData = [];
@@ -376,7 +376,7 @@
         const modalImagenes = new bootstrap.Modal(document.getElementById('modalProductoImagenes'));
 
         // ==========================================
-        // UTILIDADES Y NORMALIZACI├ôN DE B├ÜSQUEDA
+        // UTILIDADES Y NORMALIZACIÓN DE BÚSQUEDA
         // ==========================================
         function normalizar(texto) {
             if (texto == null) return '';
@@ -398,7 +398,7 @@
         }
 
         // ==========================================
-        // CARGA DE ├ôRDENES (Punto 2.a)
+        // CARGA DE ÓRDENES (Punto 2.a)
         // ==========================================
         async function cargarOrdenes() {
             const tbody = document.getElementById('ordenesTableBody');
@@ -406,7 +406,7 @@
                 <tr>
                     <td colspan="7" class="text-center py-4 text-muted">
                         <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        Cargando ├│rdenes...
+                        Cargando órdenes...
                     </td>
                 </tr>
             `;
@@ -416,14 +416,14 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 ordenesData = await response.json();
                 
-                // Aplicar el filtro activo o mostrar todas si est├í vac├¡o
+                // Aplicar el filtro activo o mostrar todas si está vacío
                 aplicarFiltroOrdenes();
             } catch (err) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar ├│rdenes: ${err.message}
-                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la p├ígina en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
+                            <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar órdenes: ${err.message}
+                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la página en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
                         </td>
                     </tr>
                 `;
@@ -434,8 +434,8 @@
             const tbody = document.getElementById('ordenesTableBody');
             if (!lista || lista.length === 0) {
                 const mensaje = busquedaActiva
-                    ? `<i class="bi bi-search me-2"></i>No se encontraron ├│rdenes que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroOrdenes()">Restablecer b├║squeda</button>`
-                    : `<i class="bi bi-inbox me-2"></i>No se encontraron ├│rdenes registradas.`;
+                    ? `<i class="bi bi-search me-2"></i>No se encontraron órdenes que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroOrdenes()">Restablecer búsqueda</button>`
+                    : `<i class="bi bi-inbox me-2"></i>No se encontraron órdenes registradas.`;
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
@@ -449,7 +449,7 @@
             tbody.innerHTML = lista.map(o => {
                 const fecha = o.fechaCreacion ? new Date(o.fechaCreacion).toLocaleString() : 'N/A';
                 const total = o.total != null ? `$ ${Number(o.total).toFixed(2)}` : '$ 0.00';
-                const telefono = o.telefono || 'Sin tel├®fono';
+                const telefono = o.telefono || 'Sin teléfono';
                 
                 let badgeClass = 'badge-status-other';
                 const estLower = (o.estado || '').toLowerCase();
@@ -486,7 +486,7 @@
 
                 document.getElementById('detalleOrdenId').textContent = orden.id;
                 document.getElementById('detalleEmail').textContent = orden.email;
-                document.getElementById('detalleTelefono').textContent = orden.telefono || 'Sin tel├®fono';
+                document.getElementById('detalleTelefono').textContent = orden.telefono || 'Sin teléfono';
                 document.getElementById('detalleDireccion').textContent = orden.direccionEnvio || 'No especificada';
                 document.getElementById('detalleFecha').textContent = orden.fechaCreacion ? new Date(orden.fechaCreacion).toLocaleString() : 'N/A';
                 document.getElementById('detalleTotal').textContent = `$ ${Number(orden.total || 0).toFixed(2)}`;
@@ -520,7 +520,7 @@
                     tbodyProd.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No hay productos en esta orden.</td></tr>`;
                 }
 
-                // 2. Gestionar Facturaci├│n si est├í en Ready to Delivery (Punto 2.c)
+                // 2. Gestionar Facturación si está en Ready to Delivery (Punto 2.c)
                 const secFactura = document.getElementById('seccionFacturacion');
                 const secSinFactura = document.getElementById('seccionSinFactura');
 
@@ -540,17 +540,17 @@
                             if (factura.items && factura.items.length > 0) {
                                 tbodyItems.innerHTML = factura.items.map(fi => `
                                     <tr>
-                                        <td>${escapeHtml(fi.nombreProducto || '├ìtem')}</td>
+                                        <td>${escapeHtml(fi.nombreProducto || 'Ítem')}</td>
                                         <td class="text-center">${fi.cantidad}</td>
                                         <td class="text-end">$ ${Number(fi.precioUnitario || 0).toFixed(2)}</td>
                                         <td class="text-end fw-bold">$ ${Number(fi.subtotal || 0).toFixed(2)}</td>
                                     </tr>
                                 `).join('');
                             } else {
-                                tbodyItems.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Sin ├¡tems desglosados</td></tr>`;
+                                tbodyItems.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Sin ítems desglosados</td></tr>`;
                             }
                         } else {
-                            secFactura.innerHTML = `<div class="alert alert-warning">No se encontr├│ factura registrada para esta orden.</div>`;
+                            secFactura.innerHTML = `<div class="alert alert-warning">No se encontró factura registrada para esta orden.</div>`;
                         }
                     } catch (e) {
                         secFactura.innerHTML = `<div class="alert alert-danger">Error al consultar la factura: ${e.message}</div>`;
@@ -586,14 +586,14 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 productosData = await response.json();
                 
-                // Aplicar el filtro activo o mostrar todos si est├í vac├¡o
+                // Aplicar el filtro activo o mostrar todos si está vacío
                 aplicarFiltroProductos();
             } catch (err) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center py-4 text-danger">
                             <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar productos: ${err.message}
-                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la p├ígina en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
+                            ${window.location.protocol === 'file:' ? '<div class="small text-muted mt-1">Recuerda abrir la página en <a href="http://localhost:8080">http://localhost:8080</a> con Docker corriendo.</div>' : ''}
                         </td>
                     </tr>
                 `;
@@ -604,7 +604,7 @@
             const tbody = document.getElementById('productosTableBody');
             if (!lista || lista.length === 0) {
                 const mensaje = busquedaActiva
-                    ? `<i class="bi bi-search me-2"></i>No se encontraron productos que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroProductos()">Restablecer b├║squeda</button>`
+                    ? `<i class="bi bi-search me-2"></i>No se encontraron productos que coincidan con "<strong>${escapeHtml(busquedaActiva)}</strong>". <button class="btn btn-link btn-sm p-0 ms-2" onclick="limpiarFiltroProductos()">Restablecer búsqueda</button>`
                     : `<i class="bi bi-inbox me-2"></i>No hay productos registrados en la tienda.`;
                 tbody.innerHTML = `
                     <tr>
@@ -627,7 +627,7 @@
                     <tr onclick="abrirImagenesProducto(${p.id})">
                         <td class="fw-bold">#${p.id}</td>
                         <td class="fw-semibold text-primary">${escapeHtml(p.nombre || '')}</td>
-                        <td class="text-muted small">${escapeHtml(p.descripcion || 'Sin descripci├│n')}</td>
+                        <td class="text-muted small">${escapeHtml(p.descripcion || 'Sin descripción')}</td>
                         <td><span class="badge bg-light text-dark">${escapeHtml(p.categoria || 'General')}</span></td>
                         <td class="fw-bold text-success">${precio}</td>
                         <td>${stockBadge}</td>
@@ -642,7 +642,7 @@
         }
 
         // ==========================================
-        // GALER├ìA DE IM├üGENES (Punto 3.b)
+        // GALERÍA DE IMÁGENES (Punto 3.b)
         // ==========================================
         function abrirImagenesProducto(id) {
             const prod = productosData.find(p => p.id === id);
@@ -655,18 +655,21 @@
                 container.innerHTML = prod.imagenes.map((img, idx) => `
                     <div class="col-md-6 col-lg-4">
                         <div class="product-img-card">
-                            <img src="${escapeHtml(img.url)}" alt="Foto ${idx + 1}" onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
-                            <div class="p-2 text-center text-muted small text-truncate" title="${escapeHtml(img.url)}">
-                                ${escapeHtml(img.url)}
+                            <img
+                                src="${escapeHtml(img.url)}"
+                                alt="${escapeHtml(prod.nombre)}"
+                                onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
+                        /*     <div class="p-2 text-center fw-semibold text-dark">
+                                ${escapeHtml(prod.nombre)}
                             </div>
-                        </div>
+                         */</div>
                     </div>
                 `).join('');
             } else {
                 container.innerHTML = `
                     <div class="col-12 text-center py-5 text-muted">
                         <i class="bi bi-image fs-1 d-block mb-2 text-secondary"></i>
-                        <p class="mb-0">Este producto no tiene im├ígenes asociadas registradas.</p>
+                        <p class="mb-0">Este producto no tiene imágenes asociadas registradas.</p>
                     </div>
                 `;
             }
@@ -675,7 +678,7 @@
         }
 
         // ==========================================
-        // B├ÜSQUEDA Y FILTRADO AVANZADO (Puntos 2 y 3)
+        // BÚSQUEDA Y FILTRADO AVANZADO (Puntos 2 y 3)
         // ==========================================
         function aplicarFiltroOrdenes() {
             const input = document.getElementById('filtroOrdenes');
@@ -708,7 +711,7 @@
                 const fechaStr = fechaObj ? normalizar(fechaObj.toLocaleString()) : '';
                 const fechaIso = normalizar(o.fechaCreacion);
 
-                // Sin├│nimos comunes de estado en espa├▒ol/ingl├®s
+                // Sinónimos comunes de estado en español/inglés
                 let sinonimosEstado = '';
                 if (est.includes('ready')) sinonimosEstado += ' listo lista entregado entrega delivery preparacion';
                 if (est.includes('stock')) sinonimosEstado += ' sin stock no stock agotado sin existencia';
@@ -792,15 +795,15 @@
             }
         }
 
-        // Carga inicial y vinculaci├│n de eventos
+        // Carga inicial y vinculación de eventos
         window.addEventListener('DOMContentLoaded', () => {
-            // Verificar si se abri├│ v├¡a file://
+            // Verificar si se abrió vía file://
             if (window.location.protocol === 'file:') {
                 const alertEl = document.getElementById('fileProtocolAlert');
                 if (alertEl) alertEl.style.display = 'block';
             }
 
-            // Eventos para buscador de ├│rdenes
+            // Eventos para buscador de órdenes
             const inputOrdenes = document.getElementById('filtroOrdenes');
             if (inputOrdenes) {
                 inputOrdenes.addEventListener('input', aplicarFiltroOrdenes);
