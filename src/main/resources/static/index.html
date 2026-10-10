@@ -655,11 +655,14 @@
                 container.innerHTML = prod.imagenes.map((img, idx) => `
                     <div class="col-md-6 col-lg-4">
                         <div class="product-img-card">
-                            <img src="${escapeHtml(img.url)}" alt="Foto ${idx + 1}" onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
-                            <div class="p-2 text-center text-muted small text-truncate" title="${escapeHtml(img.url)}">
-                                ${escapeHtml(img.url)}
+                            <img
+                                src="${escapeHtml(img.url)}"
+                                alt="${escapeHtml(prod.nombre)}"
+                                onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
+                        /*     <div class="p-2 text-center fw-semibold text-dark">
+                                ${escapeHtml(prod.nombre)}
                             </div>
-                        </div>
+                         */</div>
                     </div>
                 `).join('');
             } else {
