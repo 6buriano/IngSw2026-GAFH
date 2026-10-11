@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Ventas - Laboratorio 4</title>
     <!-- Bootstrap 5 CSS -->
@@ -655,10 +658,7 @@
                 container.innerHTML = prod.imagenes.map((img, idx) => `
                     <div class="col-md-6 col-lg-4">
                         <div class="product-img-card">
-                            <img src="${escapeHtml(img.url)}" alt="Foto ${idx + 1}" onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
-                            <div class="p-2 text-center text-muted small text-truncate" title="${escapeHtml(img.url)}">
-                                ${escapeHtml(img.url)}
-                            </div>
+                            <img src="${escapeHtml(img.url)}" alt="${escapeHtml(prod.nombre)}" onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+No+Disponible'">
                         </div>
                     </div>
                 `).join('');
@@ -672,10 +672,7 @@
             }
 
             modalImagenes.show();
-        } 
-        // ==========================================
-// GALERÍA DE IMÁGENES (Punto 3.b)
-// ==========================================
+        }
         
         // ==========================================
         // BÚSQUEDA Y FILTRADO AVANZADO (Puntos 2 y 3)
