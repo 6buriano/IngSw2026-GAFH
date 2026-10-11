@@ -480,7 +480,7 @@
         // ==========================================
         // DETALLE DE ORDEN Y FACTURA (Punto 2.b y 2.c)
         // ==========================================
-        async function abrirDetalleOrden(id) {
+        /* async function abrirDetalleOrden(id) {
             try {
                 // 1. Obtener detalle de la orden con sus productos
                 const resp = await fetch(`${API_BASE}/api/ordenes/${id}/detalle`);
@@ -543,7 +543,7 @@
                             if (factura.items && factura.items.length > 0) {
                                 tbodyItems.innerHTML = factura.items.map(fi => `
                                     <tr>
-                                        <td>${escapeHtml(fi.nombreProducto || 'Ítem')}</td>
+                                        <td>${escapeHtml(fi.productoNombre || 'Ítem')}</td>
                                         <td class="text-center">${fi.cantidad}</td>
                                         <td class="text-end">$ ${Number(fi.precioUnitario || 0).toFixed(2)}</td>
                                         <td class="text-end fw-bold">$ ${Number(fi.subtotal || 0).toFixed(2)}</td>
@@ -568,7 +568,156 @@
             } catch (err) {
                 alert(`Error al abrir detalle de la orden: ${err.message}`);
             }
+        } */
+       async function abrirDetalleOrden(id) {
+        try {
+            // 1. Obtener detalle de la orden con sus productos
+            const resp = await fetch(`${API_BASE}/api/ordenes/${id}/detalle`);
+            if (!resp.ok) {
+                throw new Error(`Error al obtener orden: HTTP ${resp.status}`);
+            }
+
+            const orden = await resp.json();
+
+            document.getElementById('detalleOrdenId').textContent = orden.id;
+            document.getElementById('detalleEmail').textContent = orden.email;
+            document.getElementById('detalleTelefono').textContent = orden.telefono || 'Sin teléfono';
+            document.getElementById('detalleDireccion').textContent = orden.direccionEnvio || 'No especificada';
+            document.getElementById('detalleFecha').textContent = orden.fechaCreacion
+                ? new Date(orden.fechaCreacion).toLocaleString()
+                : 'N/A';
+            document.getElementById('detalleTotal').textContent =
+                `$ ${Number(orden.total || 0).toFixed(2)}`;
+
+            // Determinar el estado de la orden
+            let badgeClass = 'badge-status-other';
+            const estLower = (orden.estado || '').toLowerCase();
+
+            if (estLower.includes('ready')) {
+                badgeClass = 'badge-status-ready';
+            } else if (estLower.includes('create')) {
+                badgeClass = 'badge-status-created';
+            }
+
+            document.getElementById('detalleEstado').innerHTML =
+                `<span class="badge ${badgeClass} px-2 py-1">${escapeHtml(orden.estado || '')}</span>`;
+
+            // 2. Renderizar productos de la orden (Punto 2.b)
+            const tbodyProd = document.getElementById('detalleProductosBody');
+
+            if (orden.items && orden.items.length > 0) {
+                tbodyProd.innerHTML = orden.items.map(item => {
+                    const p = item.producto || {};
+                    const precio = p.precio != null ? Number(p.precio) : 0;
+                    const cantidad = item.cantidad || 0;
+                    const subtotal = precio * cantidad;
+
+                    return `
+                        <tr>
+                            <td>${p.id || '-'}</td>
+                            <td class="fw-semibold">${escapeHtml(p.nombre || 'Producto')}</td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    ${escapeHtml(p.categoria || 'General')}
+                                </span>
+                            </td>
+                            <td class="text-end">$ ${precio.toFixed(2)}</td>
+                            <td class="text-center fw-bold">${cantidad}</td>
+                            <td class="text-end fw-semibold">$ ${subtotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbodyProd.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No hay productos en esta orden.
+                        </td>
+                    </tr>`;
+            }
+
+            // 3. Gestionar facturación si está en Ready to Delivery (Punto 2.c)
+            const secFactura = document.getElementById('seccionFacturacion');
+            const secSinFactura = document.getElementById('seccionSinFactura');
+
+            if (estLower.includes('ready')) {
+                secSinFactura.style.display = 'none';
+                secFactura.style.display = 'block';
+
+                try {
+                    const respFactura = await fetch(`${API_BASE}/api/facturas/orden/${id}`);
+
+                    if (respFactura.ok) {
+                        const factura = await respFactura.json();
+
+                        document.getElementById('facturaId').textContent = `#${factura.id}`;
+
+                        document.getElementById('facturaFecha').textContent =
+                            factura.fechaEmision
+                                ? new Date(factura.fechaEmision).toLocaleString()
+                                : 'N/A';
+
+                        document.getElementById('facturaMonto').textContent =
+                            `$ ${Number(factura.montoTotal || 0).toFixed(2)}`;
+
+                        // Renderizar ítems de la factura utilizando los nombres de la orden
+                        const tbodyItems = document.getElementById('facturaItemsBody');
+
+                        if (factura.items && factura.items.length > 0) {
+                            tbodyItems.innerHTML = factura.items.map(fi => {
+
+                                // Buscar el producto correspondiente en la tabla anterior
+                                const itemOrden = (orden.items || []).find(item =>
+                                    String(item.producto?.id) === String(fi.productoId)
+                                );
+
+                                // Priorizar el nombre obtenido de la orden
+                                const nombreProducto =
+                                    itemOrden?.producto?.nombre ||
+                                    fi.productoNombre ||
+                                    'Ítem';
+
+                                return `
+                                    <tr>
+                                        <td>${escapeHtml(nombreProducto)}</td>
+                                        <td class="text-center">${fi.cantidad}</td>
+                                        <td class="text-end">$ ${Number(fi.precioUnitario || 0).toFixed(2)}</td>
+                                        <td class="text-end fw-bold">$ ${Number(fi.subtotal || 0).toFixed(2)}</td>
+                                    </tr>
+                                `;
+                            }).join('');
+                        } else {
+                            tbodyItems.innerHTML = `
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        Sin ítems desglosados
+                                    </td>
+                                </tr>`;
+                        }
+                    } else {
+                        secFactura.innerHTML = `
+                            <div class="alert alert-warning">
+                                No se encontró factura registrada para esta orden.
+                            </div>`;
+                    }
+                } catch (e) {
+                    secFactura.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error al consultar la factura: ${escapeHtml(e.message)}
+                        </div>`;
+                }
+            } else {
+                secFactura.style.display = 'none';
+                secSinFactura.style.display = 'flex';
+            }
+
+            // 4. Mostrar el modal de la orden
+            modalOrden.show();
+
+        } catch (err) {
+            alert(`Error al abrir detalle de la orden: ${err.message}`);
         }
+    }
 
         // ==========================================
         // CARGA DE PRODUCTOS (Punto 3.a)
