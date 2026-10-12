@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Copiar código') {
+            steps {
+                sh '''
+                    rm -rf /destino/*
+                    cp -r /fuente/* /destino/
+                '''
+            }
+        }
+
+        stage('Compilar y testear') {
+            steps {
+                sh 'mvn -f /destino/pom.xml clean test'
+            }
+        }
+
+	    stage('Construir imagen Docker') {
+    	    	steps {
+        	    	sh 'docker build -t tienda-app:latest /destino'
+    		    }
+	    }
+	    
+	    stage('Deployment') {
+            steps {
+                sh '''
+                    docker stop tienda_app || true
+                    docker rm tienda_app || true
+        
+                    docker run -d \
+                      --name tienda_app \
+                      --network ingsw2026-gafh_default \
+                      -p 8080:8080 \
+                      tienda-app:latest
+                '''
+            }
+        }
+
+        stage('Verificar resultado') {
+            steps {
+                sh '''
+                    echo "Contenido generado:"
+                    ls -la /destino
+                '''
+            }
+        }
+    }
+}
