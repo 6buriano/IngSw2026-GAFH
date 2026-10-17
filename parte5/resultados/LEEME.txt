@@ -1,0 +1,24 @@
+Evidencia de la ejecución del Laboratorio 5 (Docker Swarm)
+===========================================================
+
+Generada por: scripts/02-pruebas-balanceo.sh
+Ejecución:    17/10/2026 14:00 (Docker 29.8.2, 1 nodo manager "docker-desktop", 3 réplicas)
+Resultado:    36/36 POST /api/ordenes -> HTTP 201, balanceo y caída de instancias validados.
+
+Archivos
+--------
+resumen-<fecha>.txt   Resumen consolidado: nodos, distribución por fase y totales.
+respuestas-<fecha>.csv Una fila por request: estado;http;orden;instancia;etiqueta.
+                      "instancia" es el valor del header X-Instancia (hostname del contenedor).
+faseN-logs.txt        Salida cruda de `docker service logs --timestamps` para esa fase.
+                      El prefijo "tienda_lab5_api.N.<task>@docker-desktop" indica la réplica
+                      (slot N) y la tarea concreta que emitió cada línea.
+faseN-tareas.txt      Salida de `docker service ps` al comienzo de la fase (estado de cada tarea).
+
+Fases
+-----
+FASE 1: 3 réplicas  -> 12 requests (4 por instancia).
+FASE 2: 2 réplicas  -> 10 requests (5 por instancia; la tercera fue eliminada con scale=2).
+FASE 3: 1 réplica   -> 8 requests (todos en la única instancia viva, scale=1).
+FASE 4: 3 réplicas, se mata una tarea con `docker kill` -> 6 requests OK mientras Swarm
+        la re-crea; el servicio vuelve a 3/3 sin intervención manual.

@@ -1,0 +1,43 @@
+==============================================================
+ Laboratorio 5 - Resumen de la ejecución
+ Fecha: Sat Oct 17 14:00:52     2026
+ Host:  DESKTOP-ED7J6DQ
+ Docker: 29.8.2
+ Stack:  tienda_lab5
+ API:    http://localhost:8080
+==============================================================
+
+--- Nodos del swarm ---
+ID                            HOSTNAME         STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+0xdl8b6q2gb1ycjyppgcnzncp *   docker-desktop   Ready     Active         Leader           29.8.2
+
+--- FASE 1 (se esperaban 3 instancias y 12 requests) ---
+Requests en logs: 12 | instancias distintas: 3
+      4 0a57f181d82b
+      4 3b7673362735
+      4 64d1a8c6eaf4
+
+--- FASE 2 (se esperaban 2 instancias y 10 requests) ---
+Requests en logs: 10 | instancias distintas: 2
+      5 0a57f181d82b
+      5 3b7673362735
+
+--- FASE 3 (se esperaban 1 instancias y 8 requests) ---
+Requests en logs: 8 | instancias distintas: 1
+      8 3b7673362735
+
+--- FASE 4 (caída simulada de una instancia) ---
+Réplicas después de la recuperación: 3/3
+Requests exitosos durante la recuperación: (ver respuestas-*.csv, etiquetas f4-*)
+
+--- Flujo MQTT ---
+Orden #72 estado='Ready to Delivery' factura HTTP 200
+
+==============================================================
+ TOTALES
+   Requests enviados : 36
+   HTTP 201          : 36
+   Fallidos          : 0
+   Fases con errores : 0
+   Resultado         : BALANCEO Y TOLERANCIA A FALLOS VALIDADOS
+==============================================================

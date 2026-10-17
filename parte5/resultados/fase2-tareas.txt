@@ -1,0 +1,5 @@
+tienda_lab5_api.1 | Running 3 minutes ago | nodo=docker-desktop | error=
+tienda_lab5_api.1 | Failed 3 minutes ago | nodo=docker-desktop | error="task: non-zero exit (1)"
+tienda_lab5_api.2 | Running about a minute ago | nodo=docker-desktop | error=
+tienda_lab5_api.2 | Failed about a minute ago | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.2 | Failed 3 minutes ago | nodo=docker-desktop | error="task: non-zero exit (1)"

@@ -1,0 +1,40 @@
+2026-10-17T17:01:40.521557938Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":59,"estado":"Created","fechaCreacion":"2026-10-17T17:01:40"}
+2026-10-17T17:01:40.521582424Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":59,"estado":"Created","fechaCreacion":"2026-10-17T17:01:40"}
+2026-10-17T17:01:40.521839334Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 59 | Estado: Created | Fecha: 2026-10-17T17:01:40
+2026-10-17T17:01:40.525918762Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:40.525Z  INFO 1 --- [nio-8080-exec-6] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 348 ms
+2026-10-17T17:01:40.530934491Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 59 procesada exitosamente. Factura #59 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:41.380761642Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":60,"estado":"Created","fechaCreacion":"2026-10-17T17:01:41"}
+2026-10-17T17:01:41.380844586Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":60,"estado":"Created","fechaCreacion":"2026-10-17T17:01:41"}
+2026-10-17T17:01:41.381113877Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 60 | Estado: Created | Fecha: 2026-10-17T17:01:41
+2026-10-17T17:01:41.384234365Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:41.383Z  INFO 1 --- [nio-8080-exec-8] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 321 ms
+2026-10-17T17:01:41.392271947Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 60 procesada exitosamente. Factura #60 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:42.224421797Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":61,"estado":"Created","fechaCreacion":"2026-10-17T17:01:41"}
+2026-10-17T17:01:42.224659298Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":61,"estado":"Created","fechaCreacion":"2026-10-17T17:01:41"}
+2026-10-17T17:01:42.225519250Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 61 | Estado: Created | Fecha: 2026-10-17T17:01:41
+2026-10-17T17:01:42.232874805Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:42.232Z  INFO 1 --- [io-8080-exec-10] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 329 ms
+2026-10-17T17:01:42.242347891Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 61 procesada exitosamente. Factura #61 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:43.105675066Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":62,"estado":"Created","fechaCreacion":"2026-10-17T17:01:42"}
+2026-10-17T17:01:43.105690664Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":62,"estado":"Created","fechaCreacion":"2026-10-17T17:01:42"}
+2026-10-17T17:01:43.106096060Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 62 | Estado: Created | Fecha: 2026-10-17T17:01:42
+2026-10-17T17:01:43.109607959Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:43.109Z  INFO 1 --- [nio-8080-exec-1] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 332 ms
+2026-10-17T17:01:43.114162219Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 62 procesada exitosamente. Factura #62 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:43.924811024Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":63,"estado":"Created","fechaCreacion":"2026-10-17T17:01:43"}
+2026-10-17T17:01:43.924824004Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":63,"estado":"Created","fechaCreacion":"2026-10-17T17:01:43"}
+2026-10-17T17:01:43.925052542Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 63 | Estado: Created | Fecha: 2026-10-17T17:01:43
+2026-10-17T17:01:43.928784309Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:43.928Z  INFO 1 --- [nio-8080-exec-4] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 326 ms
+2026-10-17T17:01:43.932863685Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 63 procesada exitosamente. Factura #63 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:44.777858284Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":64,"estado":"Created","fechaCreacion":"2026-10-17T17:01:44"}
+2026-10-17T17:01:44.777879298Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":64,"estado":"Created","fechaCreacion":"2026-10-17T17:01:44"}
+2026-10-17T17:01:44.777990787Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 64 | Estado: Created | Fecha: 2026-10-17T17:01:44
+2026-10-17T17:01:44.782142817Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:44.781Z  INFO 1 --- [nio-8080-exec-6] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 325 ms
+2026-10-17T17:01:44.787063339Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 64 procesada exitosamente. Factura #64 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:45.644888162Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":65,"estado":"Created","fechaCreacion":"2026-10-17T17:01:45"}
+2026-10-17T17:01:45.644915231Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":65,"estado":"Created","fechaCreacion":"2026-10-17T17:01:45"}
+2026-10-17T17:01:45.645312621Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 65 | Estado: Created | Fecha: 2026-10-17T17:01:45
+2026-10-17T17:01:45.652118875Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:45.651Z  INFO 1 --- [nio-8080-exec-8] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 332 ms
+2026-10-17T17:01:45.658308060Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 65 procesada exitosamente. Factura #65 generada. Estado: 'Ready to Delivery'.
+2026-10-17T17:01:46.494568962Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT] Orden publicada con éxito en el tópico 'ordenes/creadas': {"id":66,"estado":"Created","fechaCreacion":"2026-10-17T17:01:46"}
+2026-10-17T17:01:46.494587182Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Recibido] Mensaje del tópico 'ordenes/creadas': {"id":66,"estado":"Created","fechaCreacion":"2026-10-17T17:01:46"}
+2026-10-17T17:01:46.494889018Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [MQTT Procesado] Orden ID: 66 | Estado: Created | Fecha: 2026-10-17T17:01:46
+2026-10-17T17:01:46.497702582Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | 2026-10-17T17:01:46.497Z  INFO 1 --- [io-8080-exec-10] c.tienda.config.InstanceLoggingFilter    : [REQ] POST /api/ordenes -> 201 | instancia=3b7673362735 | 322 ms
+2026-10-17T17:01:46.501510951Z tienda_lab5_api.1.mgn3bvf0jf72@docker-desktop    | >>> [Facturación] Orden 66 procesada exitosamente. Factura #66 generada. Estado: 'Ready to Delivery'.

@@ -1,0 +1,134 @@
+# =============================================================================
+#  Laboratorio 5 - Cluster de 3 nodos con Docker Swarm
+#  Servicio balanceado: POST /api/ordenes  (API REST de la tienda)
+#
+#  Este archivo es un "stack file" de Docker Swarm. Se despliega con:
+#      docker stack deploy -c docker-compose.yml tienda_lab5
+#  (el script scripts/01-levantar-cluster.sh hace todo esto automáticamente).
+#
+#  Puntos clave del diseño:
+#   * `api` se publica en el puerto 8080 en modo ingress: Docker Swarm crea una
+#     red overlay y un balanceador L4 (IPVS + routing mesh) que reparte las
+#     conexiones TCP entrantes entre las 3 réplicas. Por eso NO hace falta nginx.
+#   * Las 3 réplicas usan exactamente la MISMA imagen y la MISMA configuración;
+#     sólo se diferencian en el hostname que Docker les asigna (se ve en logs).
+#   * `restart_policy: any` + healthcheck hacen que Swarm re-cree una tarea si
+#     el contenedor se cae (alta disponibilidad).
+#   * `update_config.order: start-first` levanta la réplica nueva antes de bajar
+#     la vieja, para no perder requests durante un redeploy.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Base de datos MySQL compartida por las 3 réplicas de la API.
+  # Se ejecuta en el nodo manager para que el volumen quede en un nodo conocido.
+  # ---------------------------------------------------------------------------
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tiendadb
+    configs:
+      - source: schema_sql
+        target: /docker-entrypoint-initdb.d/schema.sql
+        mode: 0444
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -proot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 0
+
+  # ---------------------------------------------------------------------------
+  # Broker MQTT compartido. Las 3 réplicas publican las órdenes creadas en el
+  # tópico `ordenes/creadas` y se suscriben como grupo compartido para que sólo
+  # UNA de ellas facture cada orden (ver MqttSubscriberService).
+  # ---------------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    configs:
+      - source: mosquitto_conf
+        target: /mosquitto/config/mosquitto.conf
+        mode: 0444
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 0
+
+  # ---------------------------------------------------------------------------
+  # API REST de la tienda: 3 réplicas (3 nodos del cluster).
+  # ---------------------------------------------------------------------------
+  api:
+    image: ${API_IMAGE:-ingsw2026-gafh-api:1.0.0}
+    ports:
+      # `mode: ingress` es lo que habilita el routing mesh + balanceo entre réplicas.
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tiendadb?allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      # Apagado ordenado: al bajar una réplica deja de aceptar requests y termina
+      # los que están en curso (evita conexiones cortadas).
+      SERVER_SHUTDOWN: graceful
+      SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 20s
+      # Logs más compactos en el cluster
+      SPRING_JPA_SHOW_SQL: "false"
+    healthcheck:
+      # La imagen es alpine: usa el wget de BusyBox (no hay curl).
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/index.html || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    stop_grace_period: 30s
+    deploy:
+      replicas: 3
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      rollback_config:
+        order: start-first
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+        max_attempts: 0
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+
+volumes:
+  mysql_data:
+
+configs:
+  schema_sql:
+    file: ./schema.sql
+  mosquitto_conf:
+    file: ./mosquitto.conf

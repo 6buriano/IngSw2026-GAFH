@@ -12,6 +12,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class MqttSubscriberService implements MqttCallback {
 
@@ -30,14 +32,22 @@ public class MqttSubscriberService implements MqttCallback {
     @EventListener(ApplicationReadyEvent.class)
     public void suscribir() {
         try {
-            String clientId = "SubscriberService-" + System.currentTimeMillis();
+            // En el cluster (Lab 5) cada réplica necesita un clientId único; si no, el
+            // broker expulsa a las instancias anteriores al conectarse una nueva.
+            String instancia = System.getenv().getOrDefault("HOSTNAME", "local-" + System.currentTimeMillis());
+            String clientId = "SubscriberService-" + instancia + "-" + UUID.randomUUID();
             MqttClient client = new MqttClient(brokerUrl, clientId);
             client.setCallback(this);
             client.connect();
-            
+
             String topic = "ordenes/creadas";
-            client.subscribe(topic, 1);
-            System.out.println(">>> [MQTT Sub] Suscrito exitosamente al tópico '" + topic + "'");
+            // Suscripción compartida (Mosquitto >= 2.0): las 3 réplicas forman el grupo
+            // "facturacion" y el broker entrega cada orden a UNA sola de ellas, evitando
+            // que las 3 facturen la misma orden al mismo tiempo.
+            String suscripcion = "$share/facturacion/" + topic;
+            client.subscribe(suscripcion, 1);
+            System.out.println(">>> [MQTT Sub] Suscrito exitosamente al tópico '" + suscripcion
+                    + "' (grupo compartido 'facturacion')");
 
         } catch (Exception e) {
             System.err.println(">>> [MQTT Sub Error] Error al suscribir al tópico MQTT: " + e.getMessage());
