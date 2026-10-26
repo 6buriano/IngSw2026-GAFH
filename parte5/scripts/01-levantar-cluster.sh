@@ -56,10 +56,16 @@ log_info "Imagen: $API_IMAGE (la usan las 3 réplicas, es la misma imagen)"
 docker build -t "$API_IMAGE" "$PROYECTO"
 log_ok "Imagen construida: $API_IMAGE"
 
-# Aviso: el stack de los laboratorios anteriores publica el mismo puerto 8080.
-if docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -q '0\.0\.0\.0:8080'; then
-  log_warn "Hay un contenedor ocupando el puerto 8080 (¿el stack de laboratorios anteriores?)."
-  log_warn "Si el despliegue falla, bájalo con:  docker compose down   (en la raíz del proyecto)."
+# El puerto publicado tiene que estar libre en el host. Si otro contenedor lo
+# ocupa, Swarm despliega igual pero las requests terminan en el otro contenedor
+# (síntoma típico: 404 en el smoke test, o "Server: nginx" en la respuesta).
+if docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -q "0\.0\.0\.0:${API_PORT}"; then
+  log_error "El puerto ${API_PORT} ya está ocupado por otro contenedor:"
+  docker ps --format '  {{.Names}} -> {{.Ports}}' 2>/dev/null | grep "0\.0\.0\.0:${API_PORT}" || true
+  log_error "Bajá ese contenedor, o levantá este cluster en otro puerto:"
+  log_error "  API_PORT=18080 bash scripts/01-levantar-cluster.sh"
+  log_error "  API_URL=http://localhost:18080 bash scripts/02-pruebas-balanceo.sh"
+  exit 1
 fi
 
 titulo "PASO 4/5 - Desplegando el stack '$STACK' (3 réplicas)"
@@ -71,7 +77,7 @@ cd "$SCRIPT_DIR/.."
 desplegar_stack() {
   local intento=1
   while :; do
-    if API_IMAGE="$API_IMAGE" docker stack deploy -c docker-compose.yml "$STACK"; then
+    if API_IMAGE="$API_IMAGE" API_PORT="$API_PORT" docker stack deploy -c docker-compose.yml "$STACK"; then
       return 0
     fi
     if [ "$intento" -ge 3 ]; then
@@ -105,6 +111,7 @@ if [ "$codigo" = "200" ]; then
   log_ok "La API responde en $API_URL (HTTP 200)."
 else
   log_warn "La API todavía no responde correctamente (HTTP $codigo)."
+  log_warn "Si ves 'Server: nginx' o un 404, el puerto $API_PORT puede estar ocupado por otro contenedor."
   log_warn "Revisá los logs con:  docker service logs -f --tail 100 $API_SERVICE"
 fi
 

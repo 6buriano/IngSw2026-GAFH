@@ -1,5 +1,15 @@
-tienda_lab5_api.1 | Running 3 minutes ago | nodo=docker-desktop | error=
-tienda_lab5_api.1 | Failed 4 minutes ago | nodo=docker-desktop | error="task: non-zero exit (1)"
-tienda_lab5_api.2 | Running 5 seconds ago | nodo=docker-desktop | error=
-tienda_lab5_api.2 | Failed 2 minutes ago | nodo=docker-desktop | error="task: non-zero exit (137)"
-tienda_lab5_api.2 | Failed 4 minutes ago | nodo=docker-desktop | error="task: non-zero exit (1)"
+tienda_lab5_api.1 | Failed 45 seconds ago | desired=Shutdown | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.1 | Shutdown about a minute ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.1 | Failed 5 minutes ago | desired=Shutdown | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.1 | Shutdown 6 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.1 | Shutdown 8 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.2 | Failed 11 seconds ago | desired=Shutdown | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.2 | Shutdown about a minute ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.2 | Shutdown 4 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.2 | Shutdown 7 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.2 | Failed 9 minutes ago | desired=Shutdown | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.3 | Running 2 minutes ago | desired=Running | nodo=docker-desktop | error=
+tienda_lab5_api.3 | Shutdown 2 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.3 | Failed 6 minutes ago | desired=Shutdown | nodo=docker-desktop | error="task: non-zero exit (137)"
+tienda_lab5_api.3 | Shutdown 6 minutes ago | desired=Shutdown | nodo=docker-desktop | error=
+tienda_lab5_api.3 | Shutdown 8 minutes ago | desired=Shutdown | nodo=docker-desktop | error=

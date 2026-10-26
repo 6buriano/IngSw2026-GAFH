@@ -10,7 +10,10 @@ API_SERVICE="${STACK}_api"             # servicio de la API (3 réplicas)
 DB_SERVICE="${STACK}_db"
 MQTT_SERVICE="${STACK}_mosquitto"
 API_IMAGE="${API_IMAGE:-ingsw2026-gafh-api:1.0.0}"
-API_URL="${API_URL:-http://localhost:8080}"
+# Puerto publicado del stack. Si el 8080 está ocupado en la máquina, se puede
+# cambiar sin tocar los archivos:  API_PORT=18080 bash scripts/01-...
+API_PORT="${API_PORT:-8080}"
+API_URL="${API_URL:-http://localhost:${API_PORT}}"
 # El nombre del stack se usa como prefijo de los servicios que crea Swarm.
 
 # --- Colores (se desactivan si la salida no es una terminal) -----------------
@@ -89,12 +92,12 @@ esperar_replicas() {
   while :; do
     corriendo="$(replicas_corriendo "$servicio")"
     if [ "$corriendo" = "$deseadas" ]; then
-      log_ok "Servicio '$servicio' convergió: $corriendo/$deseadas réplicas corriendo."
+      log_ok "Servicio '$servicio': $corriendo réplica(s) corriendo (objetivo: $deseadas)."
       return 0
     fi
     transcurrido=$(( $(date +%s) - inicio ))
     if [ "$transcurrido" -ge "$timeout" ]; then
-      log_error "Timeout esperando '$servicio' ($corriendo/$deseadas después de ${transcurrido}s)."
+      log_error "Timeout esperando '$servicio' ($corriendo corriendo, objetivo $deseadas, ${transcurrido}s)."
       return 1
     fi
     printf '%s       ... %s: %s/%s réplicas (%ss)%s\n' \
