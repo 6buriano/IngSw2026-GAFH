@@ -56,16 +56,11 @@ log_info "Imagen: $API_IMAGE (la usan las 3 réplicas, es la misma imagen)"
 docker build -t "$API_IMAGE" "$PROYECTO"
 log_ok "Imagen construida: $API_IMAGE"
 
-# El puerto publicado tiene que estar libre en el host. Si otro contenedor lo
-# ocupa, Swarm despliega igual pero las requests terminan en el otro contenedor
-# (síntoma típico: 404 en el smoke test, o "Server: nginx" en la respuesta).
-if docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -q "0\.0\.0\.0:${API_PORT}"; then
-  log_error "El puerto ${API_PORT} ya está ocupado por otro contenedor:"
-  docker ps --format '  {{.Names}} -> {{.Ports}}' 2>/dev/null | grep "0\.0\.0\.0:${API_PORT}" || true
-  log_error "Bajá ese contenedor, o levantá este cluster en otro puerto:"
-  log_error "  API_PORT=18080 bash scripts/01-levantar-cluster.sh"
-  log_error "  API_URL=http://localhost:18080 bash scripts/02-pruebas-balanceo.sh"
-  exit 1
+# Aviso: si otro contenedor ya publica el 8080, la API no será accesible en ese puerto.
+if docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -q '0\.0\.0\.0:8080'; then
+  log_warn "Hay un contenedor ocupando el puerto 8080:"
+  docker ps --format '  {{.Names}} -> {{.Ports}}' 2>/dev/null | grep '0\.0\.0\.0:8080' || true
+  log_warn "Bajalo antes de probar la API (en la raíz del proyecto: docker compose down)."
 fi
 
 titulo "PASO 4/5 - Desplegando el stack '$STACK' (3 réplicas)"
@@ -77,7 +72,7 @@ cd "$SCRIPT_DIR/.."
 desplegar_stack() {
   local intento=1
   while :; do
-    if API_IMAGE="$API_IMAGE" API_PORT="$API_PORT" docker stack deploy -c docker-compose.yml "$STACK"; then
+    if API_IMAGE="$API_IMAGE" docker stack deploy -c docker-compose.yml "$STACK"; then
       return 0
     fi
     if [ "$intento" -ge 3 ]; then
@@ -94,9 +89,44 @@ desplegar_stack() {
 desplegar_stack
 
 titulo "PASO 5/5 - Esperando que las 3 réplicas estén listas"
-log_info "La primera vez MySQL tarda en inicializar la base; las réplicas que arrancan"
-log_info "antes son re-creadas automáticamente por Swarm (restart_policy: any)."
-esperar_replicas "$API_SERVICE" 3 420
+
+# El compose usa `restart_policy: none` para la API: si una tarea arranca antes de
+# que MySQL esté listo, falla y NO se re-crea sola. Por eso primero se espera a que
+# MySQL esté saludable y, si hace falta, se fuerza un nuevo intento de la API.
+esperar_db_saludable() {
+  local timeout="${1:-300}" inicio estado
+  inicio=$(date +%s)
+  log_info "Esperando a que MySQL esté saludable (puede tardar en el primer arranque)..."
+  while :; do
+    estado=$(docker ps --filter "label=com.docker.swarm.service.name=$DB_SERVICE" \
+      --format '{{.Status}}' 2>/dev/null | grep -c 'healthy' || true)
+    if [ "${estado:-0}" -ge 1 ]; then
+      log_ok "MySQL está saludable."
+      return 0
+    fi
+    if [ $(( $(date +%s) - inicio )) -ge "$timeout" ]; then
+      log_warn "MySQL no reportó 'healthy' en ${timeout}s; se continúa igual."
+      return 1
+    fi
+    sleep 5
+  done
+}
+
+esperar_db_saludable 300 || true
+
+corriendo="$(replicas_corriendo "$API_SERVICE")"
+if [ "$corriendo" -lt 3 ]; then
+  log_warn "La API tiene $corriendo/3 réplicas (con restart_policy=none no se reponen solas)."
+  log_info "Recreando las tareas de la API con MySQL ya listo..."
+  docker service update --force "$API_SERVICE" >/dev/null
+fi
+
+esperar_replicas "$API_SERVICE" 3 300 || true
+if ! esperar_servicio_estable 3 420; then
+  log_warn "El servicio no quedó estable; se fuerza un nuevo intento..."
+  docker service update --force "$API_SERVICE" >/dev/null
+  esperar_servicio_estable 3 300 || log_warn "Revisá 'docker service ps $API_SERVICE' y los logs."
+fi
 mostrar_estado
 
 # --- Smoke test -------------------------------------------------------------
@@ -111,7 +141,7 @@ if [ "$codigo" = "200" ]; then
   log_ok "La API responde en $API_URL (HTTP 200)."
 else
   log_warn "La API todavía no responde correctamente (HTTP $codigo)."
-  log_warn "Si ves 'Server: nginx' o un 404, el puerto $API_PORT puede estar ocupado por otro contenedor."
+  log_warn "Si ves 'Server: nginx' o un 404, revisá si otro contenedor está usando el 8080."
   log_warn "Revisá los logs con:  docker service logs -f --tail 100 $API_SERVICE"
 fi
 

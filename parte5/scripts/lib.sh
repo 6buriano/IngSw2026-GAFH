@@ -10,10 +10,7 @@ API_SERVICE="${STACK}_api"             # servicio de la API (3 réplicas)
 DB_SERVICE="${STACK}_db"
 MQTT_SERVICE="${STACK}_mosquitto"
 API_IMAGE="${API_IMAGE:-ingsw2026-gafh-api:1.0.0}"
-# Puerto publicado del stack. Si el 8080 está ocupado en la máquina, se puede
-# cambiar sin tocar los archivos:  API_PORT=18080 bash scripts/01-...
-API_PORT="${API_PORT:-8080}"
-API_URL="${API_URL:-http://localhost:${API_PORT}}"
+API_URL="${API_URL:-http://localhost:8080}"
 # El nombre del stack se usa como prefijo de los servicios que crea Swarm.
 
 # --- Colores (se desactivan si la salida no es una terminal) -----------------
@@ -100,9 +97,32 @@ esperar_replicas() {
       log_error "Timeout esperando '$servicio' ($corriendo corriendo, objetivo $deseadas, ${transcurrido}s)."
       return 1
     fi
-    printf '%s       ... %s: %s/%s réplicas (%ss)%s\n' \
+    printf '%s       ... %s: %s corriendo (objetivo %s, %ss)%s\n' \
       "$C_GRIS" "$servicio" "$corriendo" "$deseadas" "$transcurrido" "$C_NC"
     sleep 5
+  done
+}
+
+# Espera a que no haya un update en curso y a que N tareas estén efectivamente
+# corriendo, sin tareas nuevas en Starting/Preparing mezcladas.
+esperar_servicio_estable() {
+  local deseadas="${1:-3}" timeout="${2:-300}" inicio update total corriendo incompletas
+  inicio=$(date +%s)
+  while :; do
+    update=$(docker service inspect --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{end}}' "$API_SERVICE" 2>/dev/null || true)
+    total=$(docker service ps --filter desired-state=running --format '{{.CurrentState}}' "$API_SERVICE" 2>/dev/null | wc -l | tr -d ' ')
+    corriendo=$(docker service ps --filter desired-state=running --format '{{.CurrentState}}' "$API_SERVICE" 2>/dev/null | grep -c '^Running' || true)
+    incompletas=$(( ${total:-0} - ${corriendo:-0} ))
+    if { [ "$update" = "completed" ] || [ -z "$update" ]; } \
+       && [ "${corriendo:-0}" -eq "$deseadas" ] && [ "$incompletas" -eq 0 ]; then
+      log_ok "Servicio '$API_SERVICE' estable: $corriendo/$deseadas tareas corriendo (update=${update:-sin update})."
+      return 0
+    fi
+    if [ $(( $(date +%s) - inicio )) -ge "$timeout" ]; then
+      log_warn "El servicio no quedó estable en ${timeout}s (update=${update:-?}, corriendo=${corriendo:-0}, total=${total:-0})."
+      return 1
+    fi
+    sleep 3
   done
 }
 

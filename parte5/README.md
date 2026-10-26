@@ -33,7 +33,7 @@ La diferencia central con `docker compose` es el **modelo declarativo con reconc
 |---|---|---|
 | Alcance | 1 solo host | 1 o varios hosts (cluster) |
 | Réplicas | 1 contenedor por servicio | N réplicas por servicio (`deploy.replicas`) |
-| Si un contenedor muere | queda muerto | Swarm crea otra tarea automáticamente |
+| Si un contenedor muere | queda muerto | Swarm puede re-crearlo (`restart_policy`) |
 | Balanceo | no (hay que usar un proxy) | sí, *routing mesh* integrado |
 | Redes | bridge del host | red **overlay** entre nodos |
 | Actualizaciones | recrea contenedores (downtime) | rolling update con `start-first` y rollback |
@@ -69,17 +69,18 @@ Además, dentro de la red overlay:
 
 ### 2.4 Alta disponibilidad y tolerancia a fallos
 
-- `restart_policy: any` → si un contenedor muere (o el nodo se cae), Swarm **crea otra tarea**.
+- El compose de este laboratorio usa `restart_policy: none` para la API: si una instancia se cae,
+  **queda caída** (2/3 y luego 1/3), que es justo lo que piden los pasos 5 y 6. La recuperación es
+  explícita: `docker service update --force` (o volver a desplegar).
+- En producción se usaría `restart_policy: any`: si un contenedor muere (o el nodo se cae), Swarm
+  **crea otra tarea** automáticamente.
 - `healthcheck` → Swarm conoce el estado real del contenedor y lo muestra en `docker service ps`.
 - `update_config.order: start-first` → en un redeploy primero levanta la réplica nueva y después baja la vieja,
   por lo que no se pierden requests.
 - Al reducir réplicas (`docker service scale api=2`), el *routing mesh* **deja de enviar tráfico** a la tarea eliminada:
   las que quedan siguen atendiendo sin intervención manual.
-- Para **probar** una caída sostenida hay que desactivar ese auto-reinicio: si no, Swarm repone la
-  instancia en segundos y no se puede observar el servicio funcionando con 2 o 1 instancia. El script
-  `02-pruebas-balanceo.sh` lo desactiva con `docker service update --restart-condition none` y lo
-  restaura al final (Fase 4).
-- En un cluster **multi-nodo real**, si se cae un nodo, Swarm **reubica** sus tareas en los nodos que tengan recursos.
+- En un cluster **multi-nodo real**, con `restart_policy: any`, si se cae un nodo, Swarm **reubica** sus
+  tareas en los nodos que tengan recursos.
 
 ### 2.5 ¿Cómo se simulan los 3 nodos?
 
@@ -114,7 +115,8 @@ La sección 2.7 lista las limitaciones de esta simulación.
 ### 2.6 Qué aporta Swarm frente a un `docker-compose` común
 
 - **Escalado horizontal**: `docker service scale tienda_lab5_api=3`.
-- **Auto-reparación**: no hace falta reiniciar a mano.
+- **Auto-reparación configurable**: con `restart_policy: any` Swarm re-crea las tareas caídas; en
+  este laboratorio se usa `none` para poder simular caídas sostenidas.
 - **Rolling updates** con rollback automático si el healthcheck falla.
 - **Service discovery** por DNS (`db`, `mosquitto`) dentro de la red overlay.
 - **Secretos y configs** distribuidos por el cluster (`configs` en este stack).
@@ -318,11 +320,6 @@ bash scripts/03-bajar-cluster.sh
 
 La API queda publicada en `http://localhost:8080` (frontend en `/`, Swagger en `/swagger-ui.html`).
 
-> Si el puerto `8080` está ocupado por otro contenedor, el script 01 lo detecta y corta con un mensaje
-> claro. Se puede usar otro puerto sin tocar los archivos:
-> `API_PORT=18080 bash scripts/01-levantar-cluster.sh` y
-> `API_PORT=18080 bash scripts/02-pruebas-balanceo.sh` (el script 02 toma `API_URL` de `API_PORT`).
-
 ### Comandos manuales equivalentes
 
 ```bash
@@ -334,14 +331,13 @@ docker stack services tienda_lab5            # 3/3 réplicas
 docker service ps tienda_lab5_api            # una tarea por réplica
 docker service logs -f tienda_lab5_api       # logs de las 3 instancias
 
-# Simular una caída real (la instancia no se repone):
-docker service update --restart-condition none tienda_lab5_api
+# Simular una caída (el compose tiene restart_policy: none, no se repone):
 docker kill $(docker ps -q --filter label=com.docker.swarm.service.name=tienda_lab5_api | head -n1)
 docker service ls                            # queda 2/3
 # ... repetir para quedar 1/3 ...
 
-# Restaurar la alta disponibilidad (Swarm vuelve a 3/3):
-docker service update --restart-condition any tienda_lab5_api
+# Recuperar las 3 instancias (recrea las tareas):
+docker service update --force tienda_lab5_api
 
 # Alternativa: baja planificada (cambia el estado deseado, no simula una caída):
 docker service scale tienda_lab5_api=2
@@ -355,39 +351,33 @@ docker stack rm tienda_lab5
 |---|---|---|
 | `STACK` | `tienda_lab5` | nombre del stack |
 | `API_IMAGE` | `ingsw2026-gafh-api:1.0.0` | tag de la imagen |
-| `API_PORT` | `8080` | puerto publicado en el host (cambialo si el 8080 está ocupado) |
-| `API_URL` | `http://localhost:<API_PORT>` | URL publicada (se deriva de `API_PORT`) |
+| `API_URL` | `http://localhost:8080` | URL publicada |
 | `ADVERTISE_ADDR` | — | IP a anunciar si `docker swarm init` falla por tener varias interfaces |
 
 ---
 
 ## 8. Resultados de la validación
 
-> Ejecución real del **26/10/2026 a las 18:25** sobre **Docker 29.8.2** (Docker Desktop, swarm de
+> Ejecución real del **26/10/2026 a las 19:02** sobre **Docker 29.8.2** (Docker Desktop, swarm de
 > 1 nodo manager `docker-desktop`, 3 réplicas). Se enviaron **36 `POST /api/ordenes`**
-> (órdenes #84 a #119) y **los 36 respondieron HTTP 201**, sin fallos.
-> Evidencia cruda en `resultados/`: `resumen-20261026-182508.txt`,
-> `respuestas-20261026-182508.csv`, `fase1..fase4-logs.txt` y `fase*-tareas.txt`.
->
-> En la máquina de validación el puerto `8080` estaba ocupado por otro proyecto, así que se corrió
-> con `API_PORT=18080`; el stack y los scripts son los mismos que usan `8080` por defecto.
+> (órdenes #132 a #167) y **los 36 respondieron HTTP 201**, sin fallos.
+> Evidencia cruda en `resultados/`: `resumen-20261026-190257.txt`,
+> `respuestas-20261026-190257.csv`, `fase1..fase4-logs.txt` y `fase*-tareas.txt`.
 
 ### 8.0 Cómo se simula "bajar una instancia"
 
-El compose define `restart_policy: any` (alta disponibilidad): si una tarea muere, Swarm la re-crea
-en pocos segundos. Para validar los pasos 5 y 6 de la letra ("las otras 2 siguen atendiendo" y
-"la única que queda sigue atendiendo") hace falta una **caída sostenida**. Por eso el script:
+El compose define `restart_policy: none` para la API: si una instancia se cae, **queda caída**.
+Eso es lo que permite validar los pasos 5 y 6 de la letra ("las otras 2 siguen atendiendo" y
+"la única que queda sigue atendiendo"). El script:
 
-1. desactiva el auto-reinicio con `docker service update --restart-condition none`;
-2. espera a que termine el rolling update que dispara ese cambio (`UpdateStatus=completed`);
-3. baja una instancia con `docker kill` (exit **137**) y verifica que el servicio quede en **2/3**
-   y siga así después de 10 s;
-4. repite para quedar en **1/3**;
-5. restaura `--restart-condition any` y comprueba que Swarm vuelve a **3/3**.
+1. baja una instancia con `docker kill` (exit **137**);
+2. verifica que el servicio quede en **2/3** y siga así después de 10 s;
+3. repite para quedar en **1/3**;
+4. en la Fase 4 recrea las tareas con `docker service update --force` y vuelve a **3/3**.
 
 `docker service scale tienda_lab5_api=2` también "baja" una instancia, pero es una **baja planificada**
-(cambia el estado deseado); no simula una caída. Para las pruebas se usó el kill + auto-reinicio
-desactivado, que es lo que pide el escenario de "posibles caídas de nodos".
+(cambia el estado deseado); no simula una caída. Para producción se usaría `restart_policy: any`, pero
+en este laboratorio se dejó en `none` para que las caídas sean observables.
 
 ### 8.1 Balanceo con 3 réplicas (Fase 1)
 
@@ -396,67 +386,65 @@ Con las 3 réplicas corriendo se enviaron **12 requests**: los atendieron **las 
 
 | Réplica (slot Swarm) | Instancia (hostname del contenedor) | Nodo | POST atendidos |
 |---|---|---|---|
-| `tienda_lab5_api.1` | `fd08419ab880` | `docker-desktop` | 4 |
-| `tienda_lab5_api.2` | `c436823b30cb` | `docker-desktop` | 4 |
-| `tienda_lab5_api.3` | `4adb0c9ca254` | `docker-desktop` | 4 |
+| `tienda_lab5_api.1` | `51f884c92bfc` | `docker-desktop` | 4 |
+| `tienda_lab5_api.2` | `f6b1a082c4c4` | `docker-desktop` | 4 |
+| `tienda_lab5_api.3` | `5e6b658cbfc6` | `docker-desktop` | 4 |
 | **Total** | **3 instancias distintas** | | **12** |
 
-Secuencia real de las órdenes #84 a #95:
-`api.2 → api.3 → api.1 → api.2 → api.3 → api.1 → …` (round robin perfecto).
+Secuencia real de las órdenes #132 a #143:
+`api.3 → api.1 → api.2 → api.3 → api.1 → api.2 → …` (round robin perfecto).
 
 Extracto de `resultados/fase1-logs.txt` (una línea por instancia):
 
 ```text
-21:25:15 tienda_lab5_api.2.s87xevbutx0f@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=c436823b30cb | 872 ms
-21:25:17 tienda_lab5_api.3.0q66dilhmn3c@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=4adb0c9ca254 | 597 ms
-21:25:19 tienda_lab5_api.1.mzv9nspat7wh@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=fd08419ab880 | 550 ms
+22:03:07 tienda_lab5_api.3.esdoz3txg6i2@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=5e6b658cbfc6 | 833 ms
+22:03:09 tienda_lab5_api.1.xouu4qqq403l@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=51f884c92bfc | 671 ms
+22:03:10 tienda_lab5_api.2.jtxv6ma72c3b@docker-desktop | [REQ] POST /api/ordenes -> 201 | instancia=f6b1a082c4c4 | 492 ms
 ```
 
 ### 8.2 Con 2 réplicas, tras bajar una instancia (Fase 2)
 
-Se desactivó el auto-reinicio, se bajó la instancia **api.1** con `docker kill` (exit **137**,
-visible en `fase2-tareas.txt`) y el servicio quedó en **2/3** de forma estable (se re-chequeó a los
-10 s). Los 10 requests fueron atendidos por las 2 restantes, 5 cada una:
+Se bajó la instancia **api.1** con `docker kill` (exit **137**, visible en `fase2-tareas.txt`) y el
+servicio quedó en **2/3** de forma estable (se re-chequeó a los 10 s). Los 10 requests fueron
+atendidos por las 2 restantes, 5 cada una:
 
 | Réplica | Instancia | POST atendidos |
 |---|---|---|
-| `tienda_lab5_api.2` | `33026e5321ba` | 5 |
-| `tienda_lab5_api.3` | `ade3a38b6e6e` | 5 |
+| `tienda_lab5_api.2` | `f6b1a082c4c4` | 5 |
+| `tienda_lab5_api.3` | `5e6b658cbfc6` | 5 |
 | **Total** | **2 instancias** | **10 / 10 (HTTP 201)** |
 
-Los hostnames cambian respecto de la Fase 1 porque el `docker service update --restart-condition none`
-hace un rolling update de las 3 tareas antes de la caída. La tarea de api.1 queda `Failed`
-(desired=Shutdown) y **no se repone**.
+La tarea de api.1 queda `Failed` (desired=Shutdown) y **no se repone** (`restart_policy: none`).
 
 ### 8.3 Con 1 réplica, tras bajar otra instancia (Fase 3)
 
 Se bajó también la instancia **api.2**; el servicio quedó en **1/3** y la única que siguió viva
-(**api.3**, `ade3a38b6e6e`) **atendió los 8 requests sola**:
+(**api.3**, `5e6b658cbfc6`) **atendió los 8 requests sola**:
 
 | Réplica | Instancia | POST atendidos |
 |---|---|---|
-| `tienda_lab5_api.3` | `ade3a38b6e6e` | 8 |
+| `tienda_lab5_api.3` | `5e6b658cbfc6` | 8 |
 | **Total** | **1 instancia** | **8 / 8 (HTTP 201)** |
 
-### 8.4 Restauración del auto-reinicio: Swarm recupera las 3 (Fase 4)
+### 8.4 Recuperación: se recrean las 3 instancias (Fase 4)
 
-Se restauró el auto-reinicio (`docker service update --restart-condition any`). Swarm volvió a
-**3/3 réplicas** y los 6 requests se repartieron 2/2/2 entre las 3 instancias nuevas:
+Se recrearon las tareas con `docker service update --force` (la política de restart sigue en `none`).
+Swarm volvió a **3/3 réplicas** y los 6 requests se repartieron 2/2/2:
 
 | Réplica | Instancia | POST atendidos |
 |---|---|---|
-| `tienda_lab5_api.1` | `2983a16fe089` | 2 |
-| `tienda_lab5_api.2` | `8f4ad2ee258f` | 2 |
-| `tienda_lab5_api.3` | `89e03962ccfb` | 2 |
+| `tienda_lab5_api.1` | `e2bed25ab72b` | 2 |
+| `tienda_lab5_api.2` | `a7f17ddd7546` | 2 |
+| `tienda_lab5_api.3` | `d89e58058983` | 2 |
 | **Total** | **3 instancias** | **6 / 6 (HTTP 201)** |
 
-Esto demuestra la **alta disponibilidad**: con la política original, Swarm vuelve al estado deseado
-(3/3) sin intervención manual. En la prueba se la desactivó a propósito para poder observar la caída.
+La recuperación es **explícita** (recrear tareas), no automática: con `restart_policy: none` una tarea
+caída no vuelve sola. En producción se usaría `any` para tener auto-reparación.
 
 ### 8.5 Flujo MQTT (facturación en el cluster)
 
-- La última orden (#119) quedó en estado **`Ready to Delivery`** y
-  `GET /api/facturas/orden/119` respondió **HTTP 200**.
+- La última orden (#167) quedó en estado **`Ready to Delivery`** y
+  `GET /api/facturas/orden/167` respondió **HTTP 200**.
 - En la ventana de la Fase 1 se crearon 12 órdenes y se registraron **12 recepciones MQTT**
   (`[MQTT Recibido]`), con **12 ids distintos** y **12 líneas de facturación**: exactamente
   **una recepción y una factura por orden**, no 36 (12 × 3 réplicas).
@@ -471,12 +459,11 @@ cada evento entre las réplicas una sola vez, igual que una cola de trabajo.
 
 | Problema | Causa | Solución aplicada |
 |---|---|---|
-| `depends_on` no se respeta | **Swarm ignora `depends_on`** (es una dependencia de Compose, no de Swarm) | `restart_policy: any` + `max_attempts: 0`: las réplicas que arrancan antes que MySQL se re-crean hasta conectar |
+| `depends_on` no se respeta | **Swarm ignora `depends_on`** (es una dependencia de Compose, no de Swarm) | `01` espera a que MySQL esté healthy y recrea la API si arrancó antes; con `restart_policy: none` no se repone sola |
 | Las 3 réplicas facturaban la misma orden | Cada réplica se suscribía al tópico sin grupo | Suscripción compartida `$share/facturacion/...` + `clientId` único |
 | `docker service logs` mezcla las 3 instancias | Es el comportamiento normal (agrega los logs de todas las tareas) | Prefijo `api.N.<task>@nodo` de Swarm + campo `instancia=` del filtro |
-| Puerto 8080 ocupado por otro contenedor | El puerto publicado no está libre en el host: el stack se despliega igual, pero las requests terminan en el otro contenedor (404, `Server: nginx`) | `01-levantar-cluster.sh` corta con un mensaje claro y sugiere `API_PORT=18080` (fue el puerto usado en la validación de este informe) |
-| El auto-reinicio repone la instancia caída | `restart_policy: any` es lo correcto para alta disponibilidad, pero re-crea la tarea en ~5-10 s y no deja validar una caída sostenida | En las fases 2 y 3 el script hace `docker service update --restart-condition none`; al final restaura `any` (también si algo falla, vía `trap`) |
-| Cambiar `restart-condition` dispara un rolling update | Durante el update quedan tareas `Starting` mezcladas con las viejas y las requests pueden caer en más instancias de las esperadas | Se espera `UpdateStatus=completed` y se re-chequea 10 s después de la caída antes de medir |
+| Con `restart_policy: none` la API no se repone | Es justo lo que se busca para las pruebas (caída sostenida), pero si arranca antes que MySQL queda caída | `01` espera MySQL healthy y fuerza la API; la Fase 4 recupera con `docker service update --force` |
+| `stack deploy` / `--force` disparan un rolling update | Durante el update quedan tareas `Starting` mezcladas y las requests pueden caer en más instancias de las esperadas | `esperar_servicio_estable` espera `UpdateStatus=completed` y 3 tareas `Running` antes de medir |
 | No se podían distinguir las réplicas | Misma imagen, mismo código | Header `X-Instancia` + log `[REQ] ... instancia=` |
 | Rutas de `configs` | `docker stack deploy` lee los `configs` del disco de quien lo ejecuta y resuelve `file:` **relativo a la carpeta del compose** (no al directorio actual). Con `file: ../schema.sql` el stack depende de dónde se extraiga el zip. | `schema.sql` y `mosquitto.conf` se copian junto al `docker-compose.yml` y se referencian como `./...`: el stack es autocontenido y funciona desde cualquier carpeta. |
 | Fin de línea de los scripts | Un editor Windows puede guardarlos con CRLF y bash falla | Se guardan con **LF** y se ejecutan con Git Bash |
@@ -487,12 +474,13 @@ cada evento entre las réplicas una sola vez, igual que una cola de trabajo.
 ## 10. Conclusiones
 
 - **Docker Swarm cumple** el objetivo del laboratorio: 3 instancias de la misma imagen, ejecutadas en
-  paralelo, con **balanceo de carga L4 integrado** y **auto-reparación**, sin necesidad de nginx.
+  paralelo, con **balanceo de carga L4 integrado**, sin necesidad de nginx.
 - La validación en logs muestra que los `POST /api/ordenes` se reparten entre las 3 réplicas y que, al
   caerse instancias (**2/3** y luego **1/3**), el tráfico se redistribuye entre las que quedan **sin
   cambiar el cliente** (misma URL y puerto).
-- Para observar esa caída sostenida hubo que desactivar temporalmente el auto-reinicio; con la política
-  de producción (`any`), Swarm recupera el servicio solo (Fase 4).
+- El compose quedó con `restart_policy: none` para que una caída sea sostenida y observable; la
+  recuperación es explícita (`docker service update --force`). En producción se usaría `any` para
+  tener auto-reparación.
 - El único punto de fallo que queda es la infraestructura compartida (MySQL, Mosquitto y el host). En un
   entorno real se resolvería con nodos reales, base de datos replicada y broker en cluster.
 - Los dos ajustes al código (identificación de instancia y suscripción compartida de MQTT) fueron

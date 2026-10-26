@@ -5,22 +5,17 @@
 #
 #  Ejecuta, en este orden:
 #    FASE 1: 3 réplicas, 12 POST /api/ordenes -> los atienden las 3 instancias.
-#    FASE 2: se CAE 1 instancia (sin auto-reinicio), 10 POST -> las 2 restantes.
+#    FASE 2: se CAE 1 instancia, 10 POST -> las 2 restantes.
 #    FASE 3: se CAE otra instancia, 8 POST -> la única instancia que queda.
-#    FASE 4: se restaura el auto-reinicio -> Swarm recupera las 3 (auto-healing).
+#    FASE 4: se recrean las 3 instancias (`docker service update --force`) -> 3/3.
 #
-#  ¿Por qué se desactiva el auto-reinicio en las fases 2 y 3?
-#  El compose define `restart_policy: any` para dar alta disponibilidad: si una
-#  tarea se cae, Swarm la re-crea en pocos segundos. Para poder validar lo que
-#  pide el laboratorio ("las otras 2 siguen atendiendo" y "la única que queda
-#  sigue atendiendo") hay que simular una caída SOSTENIDA, es decir que la
-#  instancia no vuelva. Por eso el script, sólo durante la prueba:
-#      docker service update --restart-condition none tienda_lab5_api
-#  y al terminar (o si algo falla) restaura la política original:
-#      docker service update --restart-condition any  tienda_lab5_api
-#  Ojo: cambiar la política dispara un rolling update; el script espera a que
-#  termine (UpdateStatus=completed) antes de matar la instancia, para que no
-#  haya tareas nuevas "Starting" mezcladas con las que se están probando.
+#  El compose define `restart_policy: none` para la API: una instancia que se cae
+#  queda caída (2/3 y luego 1/3), que es justo lo que piden los pasos 5 y 6 del
+#  laboratorio ("las otras 2 siguen atendiendo", "la única que queda sigue
+#  atendiendo"). Si estuviera en `any` (alta disponibilidad), Swarm repondría la
+#  tarea en segundos y no se podría observar la caída sostenida. Al final se
+#  recuperan las 3 instancias con `docker service update --force`; la política
+#  de restart no se toca (sigue en `none`).
 #
 #  Para cada fase guarda en ../resultados/:
 #    - faseN-logs.txt          logs crudos del servicio (con el prefijo de réplica)
@@ -30,7 +25,6 @@
 #
 #  Uso:
 #      bash scripts/02-pruebas-balanceo.sh
-#      API_PORT=18080 bash scripts/02-pruebas-balanceo.sh     # si el 8080 está ocupado
 # =============================================================================
 set -euo pipefail
 
@@ -56,7 +50,6 @@ FALLIDOS=0
 FALLOS_ASERCION=0
 PRODUCTO_ID=""
 ULTIMA_ORDEN=""
-AUTO_REINICIO_DESACTIVADO=0
 
 fecha_utc() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
@@ -128,62 +121,22 @@ log_ok "Producto de prueba creado: id=$PRODUCTO_ID"
 # Helpers de la prueba
 # -----------------------------------------------------------------------------
 
-# Estado del último update del servicio (updating / completed / paused / ...).
-estado_update() {
-  docker service inspect --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{end}}' "$API_SERVICE" 2>/dev/null || true
-}
+# `esperar_servicio_estable` (en lib.sh) espera a que no haya updates en curso
+# y a que las 3 tareas estén efectivamente corriendo.
 
-# Espera a que el rolling update del servicio termine.
-esperar_update_completado() {
-  local timeout="${1:-240}" inicio e
-  inicio=$(date +%s)
-  while :; do
-    e="$(estado_update)"
-    if [ "$e" = "completed" ]; then
-      log_ok "El update del servicio terminó (todas las tareas al día)."
-      return 0
-    fi
-    if [ $(( $(date +%s) - inicio )) -ge "$timeout" ]; then
-      log_warn "El update no terminó en ${timeout}s (estado: ${e:-desconocido})."
-      return 1
-    fi
-    sleep 3
-  done
-}
-
-# Desactiva el auto-reinicio de Swarm (sólo para la prueba de caída sostenida).
-desactivar_autoreinicio() {
+# Se asegura de que el servicio NO tenga auto-reinicio. En el compose ya viene
+# con `condition: none`, pero si alguien lo cambió, se deja igual para la prueba.
+asegurar_sin_autoreinicio() {
   local cond
-  if [ "${AUTO_REINICIO_DESACTIVADO:-0}" = "1" ]; then
-    return 0
-  fi
   cond=$(docker service inspect --format '{{.Spec.TaskTemplate.RestartPolicy.Condition}}' "$API_SERVICE")
   if [ "$cond" = "none" ]; then
-    AUTO_REINICIO_DESACTIVADO=1
+    log_ok "El servicio no tiene auto-reinicio (restart_policy=none)."
     return 0
   fi
-  log_info "Desactivando el auto-reinicio (restart_policy=none) para simular caídas que NO se reparan solas..."
+  log_warn "El servicio tiene restart_policy=$cond; se pasa a 'none' para que la caída sea sostenida..."
   docker service update --restart-condition none "$API_SERVICE" >/dev/null
-  AUTO_REINICIO_DESACTIVADO=1
-  esperar_update_completado 240 || FALLOS_ASERCION=$((FALLOS_ASERCION + 1))
-  esperar_replicas "$API_SERVICE" 3 240 || FALLOS_ASERCION=$((FALLOS_ASERCION + 1))
-  log_ok "Auto-reinicio desactivado: las instancias que se caigan no se reponen."
-}
-
-# Restaura la política original del compose (auto-reparación / alta disponibilidad).
-reactivar_autoreinicio() {
-  if [ "${AUTO_REINICIO_DESACTIVADO:-0}" != "1" ]; then
-    return 0
-  fi
-  AUTO_REINICIO_DESACTIVADO=0
-  log_info "Restaurando el auto-reinicio (restart_policy=any)..."
-  if ! docker service update --restart-condition any "$API_SERVICE" >/dev/null 2>&1; then
-    log_warn "No se pudo restaurar restart_policy=any."
-    return 1
-  fi
-  esperar_update_completado 240 || true
-  esperar_replicas "$API_SERVICE" 3 300 || true
-  log_ok "Auto-reinicio restaurado."
+  esperar_servicio_estable 3 300 || FALLOS_ASERCION=$((FALLOS_ASERCION + 1))
+  log_ok "Auto-reinicio desactivado."
 }
 
 # Baja UNA instancia (contenedor) y verifica que quede N/3 estable, sin auto-repararse.
@@ -309,9 +262,6 @@ ejecutar_fase_caida() {
   local inicio i
 
   titulo "FASE $numero - $titulo_fase"
-  if [ "$numero" -eq 2 ]; then
-    desactivar_autoreinicio || true
-  fi
   matar_instancia "$esperadas" || true
 
   guardar_tareas "$RESULTADOS/fase$numero-tareas.txt"
@@ -333,8 +283,19 @@ ejecutar_fase_caida() {
   validar_fase "$numero" "$esperadas" "$pedidos" || true
 }
 
-# Si el script se corta (error, Ctrl+C), deja el servicio como estaba.
-trap 'reactivar_autoreinicio >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
+# Si el script se corta (error, Ctrl+C), se limpia el temporal.
+trap 'rm -rf "$TMP"' EXIT
+
+# -----------------------------------------------------------------------------
+# Preparación: el servicio debe tener 3 réplicas y sin auto-reinicio
+# -----------------------------------------------------------------------------
+asegurar_sin_autoreinicio || true
+if [ "$(replicas_corriendo "$API_SERVICE")" -lt 3 ]; then
+  log_warn "El servicio tiene menos de 3 réplicas; se recrean antes de empezar..."
+  docker service update --force "$API_SERVICE" >/dev/null
+fi
+# Espera a que termine cualquier rolling update y queden 3 tareas estables.
+esperar_servicio_estable 3 300 || FALLOS_ASERCION=$((FALLOS_ASERCION + 1))
 
 # -----------------------------------------------------------------------------
 # FASE 1: 3 réplicas
@@ -366,10 +327,12 @@ ejecutar_fase_caida 2 "se cae 1 instancia - las otras 2 siguen procesando" 10 2
 ejecutar_fase_caida 3 "se cae otra instancia - la única viva sigue procesando" 8 1
 
 # -----------------------------------------------------------------------------
-# FASE 4: se restaura el auto-reinicio y Swarm recupera las 3
+# FASE 4: recuperación (recrear las 3 instancias)
 # -----------------------------------------------------------------------------
-titulo "FASE 4 - Se restaura el auto-reinicio: Swarm recupera las 3 instancias"
-reactivar_autoreinicio
+titulo "FASE 4 - Recuperación: se recrean las 3 instancias"
+log_info "Recreando las tareas: docker service update --force $API_SERVICE"
+docker service update --force "$API_SERVICE" >/dev/null
+esperar_servicio_estable 3 300 || FALLOS_ASERCION=$((FALLOS_ASERCION + 1))
 guardar_tareas "$RESULTADOS/fase4-tareas.txt"
 docker service ps --format '   tarea: {{.Name}} | {{.CurrentState}} | desired={{.DesiredState}}' "$API_SERVICE" | head -n 8 || true
 
@@ -439,6 +402,7 @@ titulo "Extracto de logs de la FASE 1 (se ve la réplica que atendió cada reque
 grep '\[REQ\] POST /api/ordenes' "$RESULTADOS/fase1-logs.txt" 2>/dev/null | head -n 8 || true
 
 if [ "$FALLOS_ASERCION" -gt 0 ]; then
+  log_warn "Si el servicio quedó con menos de 3 réplicas, recuperalo con: docker service update --force $API_SERVICE"
   exit 1
 fi
 

@@ -79,9 +79,8 @@ services:
     image: ${API_IMAGE:-ingsw2026-gafh-api:1.0.0}
     ports:
       # `mode: ingress` es lo que habilita el routing mesh + balanceo entre réplicas.
-      # El puerto del host es configurable (API_PORT) por si el 8080 está ocupado.
       - target: 8080
-        published: ${API_PORT:-8080}
+        published: 8080
         protocol: tcp
         mode: ingress
     environment:
@@ -116,13 +115,11 @@ services:
         parallelism: 1
         delay: 10s
       restart_policy:
-        # Alta disponibilidad: Swarm re-crea la tarea si se cae.
-        # El script 02-pruebas-balanceo.sh lo pasa a "none" temporalmente para poder
-        # simular una caída sostenida (2/3 y 1/3) y lo restaura al final.
-        condition: any
-        delay: 5s
-        window: 120s
-        max_attempts: 0
+        # Sin auto-reinicio: una instancia que se cae queda caída (2/3 y luego 1/3),
+        # que es lo que piden los pasos 5 y 6 del laboratorio. La recuperación se hace
+        # re-desplegando o con `docker service update --force` (Fase 4 del script 02).
+        # En producción se usaría `condition: any` para tener alta disponibilidad.
+        condition: none
       resources:
         limits:
           cpus: "1.0"
